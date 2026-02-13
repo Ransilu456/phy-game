@@ -12,6 +12,10 @@ export class Renderer {
         this.originX = 50;
         this.originY = 0; // Set in resize
 
+        // Manual Panning
+        this.manualPanX = 0;
+        this.manualPanY = 0;
+
         this.resize();
         // Use a small delay/debounce for better resize performance
         let resizeTimer;
@@ -66,11 +70,18 @@ export class Renderer {
 
     // Convert Physics Coordinates (Meters) to Canvas Coordinates (Pixels)
     toCanvasX(x) {
-        return this.originX + (x * this.scale);
+        return this.originX + (x * this.scale) + this.manualPanX;
     }
 
     toCanvasY(y) {
-        return this.originY - (y * this.scale);
+        return this.originY - (y * this.scale) + this.manualPanY;
+    }
+
+    resetView() {
+        this.manualPanX = 0;
+        this.manualPanY = 0;
+        this.targetZoom = 1.0;
+        this.zoom = 1.0;
     }
 
     clear() {

@@ -160,6 +160,57 @@ function init() {
     // Make drawFrame accessible to resize observers
     window.drawFrame = drawFrame;
 
+    // Simulation Panning
+    let isPanning = false;
+    let startX, startY;
+
+    const onPanStart = (x, y) => {
+        isPanning = true;
+        startX = x;
+        startY = y;
+        canvas.style.cursor = 'grabbing';
+        // Disable auto-zoom when manually panning
+        if (chkAutoZoom.checked) chkAutoZoom.checked = false;
+    };
+
+    const onPanMove = (x, y) => {
+        if (!isPanning) return;
+        const dx = x - startX;
+        const dy = y - startY;
+        renderer.manualPanX += dx;
+        renderer.manualPanY += dy;
+        startX = x;
+        startY = y;
+        drawFrame();
+    };
+
+    const onPanEnd = () => {
+        isPanning = false;
+        canvas.style.cursor = 'crosshair';
+    };
+
+    canvas.addEventListener('mousedown', e => {
+        onPanStart(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('mousemove', e => {
+        onPanMove(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('mouseup', onPanEnd);
+
+    canvas.addEventListener('touchstart', e => {
+        const touch = e.touches[0];
+        onPanStart(touch.clientX, touch.clientY);
+    }, { passive: true });
+
+    window.addEventListener('touchmove', e => {
+        const touch = e.touches[0];
+        onPanMove(touch.clientX, touch.clientY);
+    }, { passive: true });
+
+    window.addEventListener('touchend', onPanEnd);
+
     // Initial render
     renderer.drawGrid();
 }
@@ -219,6 +270,7 @@ function resetSimulation() {
     historyTrajectories = [];
     renderer.clear();
     renderer.drawGrid();
+    renderer.resetView(); // Core change for panning
     plotter.resetPan();
 
     // Reset zoom gracefully if auto-zoom was on
@@ -285,7 +337,6 @@ function loop(timestamp) {
                     }
                 }
 
-                plotter.draw(projectile.path);
                 // Don't cancel animation frame here, let it finish naturally
             }
         }
@@ -328,6 +379,9 @@ function loop(timestamp) {
             const idealZoom = Math.min(zoomX, zoomY, 1.5);
             renderer.setZoom(idealZoom);
         }
+
+        // Real-time graph updates
+        plotter.draw(projectile.path);
     }
 
     drawFrame();
