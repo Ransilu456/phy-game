@@ -3,29 +3,54 @@ export class GraphPlotter {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.resize();
-        window.addEventListener('resize', () => this.resize());
+
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => this.resize(), 100);
+        });
     }
 
     resize() {
+        const dpr = window.devicePixelRatio || 1;
         const parent = this.canvas.parentElement;
-        this.canvas.width = parent.clientWidth;
-        this.canvas.height = parent.clientHeight;
+        const rect = parent.getBoundingClientRect();
+
+        this.canvas.style.width = rect.width + 'px';
+        this.canvas.style.height = rect.height + 'px';
+
+        this.canvas.width = rect.width * dpr;
+        this.canvas.height = rect.height * dpr;
+
+        this.ctx.scale(dpr, dpr);
+
+        // Redraw on resize if data exists
+        if (this.lastData && window.drawFrame) window.drawFrame();
     }
 
     draw(dataPoints) {
+        this.lastData = dataPoints;
         const ctx = this.ctx;
-        const { width, height } = this.canvas;
+        const parent = this.canvas.parentElement;
+        const width = parent.clientWidth;
+        const height = parent.clientHeight;
 
         ctx.clearRect(0, 0, width, height);
 
-        // Simple Layout: Two side-by-side graphs
-        // 1. y vs t (Position-Time)
-        // 2. vy vs t (Velocity-Time)
+        // Responsive Layout: 
+        // Large screen: Side-by-side
+        // Mobile screen: Vertical stack
+        const isSmall = width < 400;
 
-        const fw = width / 2;
-
-        this.drawGraph(ctx, dataPoints, 'y', 't', 0, 0, fw, height, 'Height (y) vs Time (t)');
-        this.drawGraph(ctx, dataPoints, 'vy', 't', fw, 0, fw, height, 'Velocity Y (vy) vs Time (t)');
+        if (isSmall) {
+            const gh = height / 2;
+            this.drawGraph(ctx, dataPoints, 'y', 't', 0, 0, width, gh, 'y vs t');
+            this.drawGraph(ctx, dataPoints, 'vy', 't', 0, gh, width, gh, 'vy vs t');
+        } else {
+            const fw = width / 2;
+            this.drawGraph(ctx, dataPoints, 'y', 't', 0, 0, fw, height, 'Height (y) vs Time (t)');
+            this.drawGraph(ctx, dataPoints, 'vy', 't', fw, 0, fw, height, 'Velocity Y (vy) vs Time (t)');
+        }
     }
 
     drawGraph(ctx, data, keyY, keyX, xOffset, yOffset, w, h, title) {

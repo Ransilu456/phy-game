@@ -9,10 +9,15 @@ export class Renderer {
 
         // Origin offset (bottom-left)
         this.originX = 50;
-        this.originY = this.canvas.height - 50;
+        this.originY = 0; // Set in resize
 
         this.resize();
-        window.addEventListener('resize', () => this.resize());
+        // Use a small delay/debounce for better resize performance
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => this.resize(), 100);
+        });
     }
 
     get scale() {
@@ -20,17 +25,30 @@ export class Renderer {
     }
 
     setZoom(level) {
-        this.zoom = Math.max(1, Math.min(level, 5.0)); // Min 1.0, Max 5.0
+        this.zoom = Math.max(0.1, Math.min(level, 5.0));
     }
 
     resize() {
-        // Adjust canvas size to parent container
+        const dpr = window.devicePixelRatio || 1;
         const parent = this.canvas.parentElement;
-        this.canvas.width = parent.clientWidth;
-        this.canvas.height = parent.clientHeight;
+        const rect = parent.getBoundingClientRect();
 
-        // Re-calculate origin based on new height
-        this.originY = this.canvas.height - 50;
+        // Set display size (css pixels)
+        this.canvas.style.width = rect.width + 'px';
+        this.canvas.style.height = rect.height + 'px';
+
+        // Set actual size in memory (scaled by DPR)
+        this.canvas.width = rect.width * dpr;
+        this.canvas.height = rect.height * dpr;
+
+        // Normalize coordinate system to use css pixels for drawing logic
+        this.ctx.scale(dpr, dpr);
+
+        // Re-calculate origin based on new height (in css pixels)
+        this.originY = rect.height - 50;
+
+        // Trigger a redraw if main.js provides a callback or drawFrame is global
+        if (window.drawFrame) window.drawFrame();
     }
 
     // Convert Physics Coordinates (Meters) to Canvas Coordinates (Pixels)

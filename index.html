@@ -40,23 +40,32 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body class="bg-brand-bg text-slate-50 font-sans h-full flex flex-col overflow-hidden">
-    <div class="max-w-[1400px] mx-auto w-full h-full flex flex-col p-4 gap-4">
-        <header class="text-center pb-2 border-b border-brand-border">
-            <h1 class="text-3xl font-bold text-brand-accent tracking-tight">Projectile Motion Simulator</h1>
-            <p class="text-slate-400 text-sm uppercase tracking-widest mt-1">Advanced Level Physics - Sri Lanka</p>
+<body class="bg-brand-bg text-slate-50 font-sans h-screen flex flex-col md:overflow-hidden text-[0.9rem]">
+    <div
+        class="max-w-[1400px] mx-auto w-full h-full flex flex-col p-2 md:p-4 gap-2 md:gap-4 overflow-y-auto md:overflow-hidden">
+        <header class="text-center pb-2 border-b border-brand-border flex justify-between items-center sm:block">
+            <div class="text-left sm:text-center">
+                <h1 class="text-xl md:text-3xl font-bold text-brand-accent tracking-tight">Projectile Motion</h1>
+                <p class="text-slate-400 text-[0.6rem] md:text-sm uppercase tracking-widest mt-1">A/L Physics - Sri
+                    Lanka</p>
+            </div>
+            <!-- Mobile Controls Toggle -->
+            <button id="btn-mobile-controls"
+                class="lg:hidden bg-brand-panel border border-brand-border px-4 py-2 rounded-lg text-sm font-bold text-brand-accent active:scale-95 transition-transform">
+                Controls
+            </button>
         </header>
 
-        <main class="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
+        <main class="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 relative">
             <!-- Left Column: Simulation & Graphs -->
-            <div class="flex-[3] flex flex-col gap-4 min-h-0">
+            <div class="flex-[3] flex flex-col gap-2 md:gap-4 min-h-0">
                 <!-- Simulation Area -->
                 <div
-                    class="flex-[2] bg-black rounded-xl border border-brand-border relative overflow-hidden shadow-2xl shadow-sky-900/10">
+                    class="h-[350px] md:h-auto md:flex-[2] bg-black rounded-xl border border-brand-border relative overflow-hidden shadow-2xl shadow-sky-900/10">
                     <canvas id="gameCanvas" class="w-full h-full block"></canvas>
 
                     <!-- Overlay Stats -->
-                    <div class="absolute top-4 left-4 bg-brand-panel/80 backdrop-blur-md p-4 rounded-lg border border-brand-border font-mono text-sm pointer-events-none shadow-lg"
+                    <div class="absolute top-2 left-2 md:top-4 md:left-4 bg-brand-panel/80 backdrop-blur-md p-2 md:p-4 rounded-lg border border-brand-border font-mono text-[0.65rem] md:text-sm pointer-events-none shadow-lg"
                         id="statsDisplay">
                         <div class="mb-1">Range (R): <span id="val-range"
                                 class="text-brand-accent font-bold">0.00</span>
@@ -69,16 +78,31 @@
                 </div>
 
                 <!-- Graphs Section (Preview Area) -->
-                <div class="flex-1 bg-brand-panel rounded-xl border border-brand-border p-4 shadow-inner min-h-[160px]">
-                    <h3 class="text-xs uppercase tracking-widest text-slate-500 mb-2 font-bold">Physics Preview (Graphs)
+                <div
+                    class="h-[200px] md:flex-1 bg-brand-panel rounded-xl border border-brand-border p-3 md:p-4 shadow-inner min-h-[160px]">
+                    <h3 class="text-[0.6rem] md:text-xs uppercase tracking-widest text-slate-500 mb-2 font-bold">Physics
+                        Preview (Graphs)
                     </h3>
                     <canvas id="graphCanvas" class="w-full h-full"></canvas>
                 </div>
             </div>
 
-            <!-- Controls Panel -->
-            <aside
-                class="flex-1 bg-brand-panel p-5 rounded-xl border border-brand-border overflow-y-auto flex flex-col gap-6 shadow-xl min-w-[320px]">
+            <!-- Controls Panel (Aside) -->
+            <aside id="controls-panel"
+                class="fixed lg:static inset-0 z-50 transform translate-x-full lg:translate-x-0 transition-transform duration-300 lg:flex-1 bg-brand-panel p-5 rounded-xl border-l lg:border border-brand-border overflow-y-auto flex flex-col gap-6 shadow-xl min-w-[320px]">
+
+                <!-- Mobile Back Button -->
+                <div class="lg:hidden flex justify-between items-center mb-4 pb-2 border-b border-brand-border">
+                    <h2 class="text-lg font-bold text-brand-accent">Simulation Controls</h2>
+                    <button id="btn-close-controls" class="p-2 text-slate-400 hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
                 <!-- Parameters -->
                 <section class="space-y-4">
                     <h3
@@ -91,7 +115,7 @@
                                 <span class="text-brand-accent font-bold"><span id="disp-velocity">20</span> m/s</span>
                             </div>
                             <input type="range" id="inp-velocity" min="0" max="100" step="0.1" value="20"
-                                class="w-full transition-all accent-brand-accent">
+                                class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-brand-accent">
                         </label>
                         <label class="block text-sm">
                             <div class="flex justify-between mb-1 text-slate-300">
@@ -99,7 +123,7 @@
                                 <span class="text-brand-accent font-bold"><span id="disp-angle">45</span>°</span>
                             </div>
                             <input type="range" id="inp-angle" min="0" max="90" step="1" value="45"
-                                class="w-full transition-all accent-brand-accent">
+                                class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-brand-accent">
                         </label>
                         <label class="block text-sm">
                             <div class="flex justify-between mb-1 text-slate-300">
@@ -107,11 +131,11 @@
                                 <span class="text-brand-accent font-bold"><span id="disp-gravity">9.81</span>
                                     m/s²</span>
                             </div>
-                            <div class="flex gap-2">
+                            <div class="flex flex-col sm:flex-row gap-2">
                                 <input type="number" id="inp-gravity" value="9.81" step="0.01"
-                                    class="bg-brand-bg border border-brand-border text-slate-100 p-2 rounded w-full focus:outline-none focus:ring-1 focus:ring-brand-accent transition-all">
+                                    class="bg-brand-bg border border-brand-border text-slate-100 p-2 rounded w-full focus:outline-none focus:ring-1 focus:ring-brand-accent transition-all text-sm">
                                 <select id="sel-planet"
-                                    class="bg-brand-bg border border-brand-border text-slate-100 p-2 rounded w-full focus:outline-none focus:ring-1 focus:ring-brand-accent transition-all">
+                                    class="bg-brand-bg border border-brand-border text-slate-100 p-2 rounded w-full focus:outline-none focus:ring-1 focus:ring-brand-accent transition-all text-sm">
                                     <option value="9.81">Earth (9.81)</option>
                                     <option value="1.62">Moon (1.62)</option>
                                     <option value="3.71">Mars (3.71)</option>
@@ -130,7 +154,7 @@
                             Environment</h3>
                         <label class="flex items-center gap-3 cursor-pointer group select-none">
                             <input type="checkbox" id="chk-air-resistance"
-                                class="w-4 h-4 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg">
+                                class="w-5 h-5 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg cursor-pointer">
                             <span class="text-sm group-hover:text-brand-accent transition-colors">Apply Air
                                 Resistance</span>
                         </label>
@@ -146,7 +170,7 @@
                                 <span class="text-brand-accent font-bold"><span id="disp-zoom">100</span>%</span>
                             </div>
                             <input type="range" id="inp-zoom" min="0.1" max="5" step="0.1" value="1"
-                                class="w-full accent-brand-accent">
+                                class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-brand-accent">
                         </label>
                         <button id="btn-zoom-reset"
                             class="bg-slate-700 hover:bg-slate-600 text-slate-200 py-2 px-4 rounded text-xs transition-all w-full font-bold">Reset
@@ -166,28 +190,29 @@
                 <section
                     class="bg-sky-500/5 border border-sky-500/20 rounded-xl overflow-hidden shadow-inner flex flex-col min-h-0">
                     <div class="flex justify-between items-center bg-sky-500/10 p-3 flex-shrink-0">
-                        <h3 class="text-brand-accent font-bold text-xs uppercase tracking-widest">Learning Hub</h3>
+                        <h3 class="text-brand-accent font-bold text-[0.65rem] uppercase tracking-widest">Learning Hub
+                        </h3>
                         <button id="btn-toggle-hub"
-                            class="text-xs bg-sky-500/20 hover:bg-sky-500/40 px-3 py-1 rounded transition-colors uppercase font-bold tracking-tighter">Expand</button>
+                            class="text-[0.65rem] bg-sky-500/20 hover:bg-sky-500/40 px-3 py-1 rounded transition-colors uppercase font-bold tracking-tighter">Expand</button>
                     </div>
                     <div id="hub-content" class="hidden p-4 space-y-4 overflow-y-auto">
                         <!-- Tools -->
-                        <div class="space-y-2">
-                            <h4 class="text-[0.65rem] uppercase tracking-widest text-slate-500 font-bold mb-2">Visual
+                        <div class="space-y-4">
+                            <h4 class="text-[0.65rem] uppercase tracking-widest text-slate-500 font-bold mb-1">Visual
                                 Analysis</h4>
                             <label class="flex items-center gap-3 cursor-pointer group">
                                 <input type="checkbox" id="chk-show-vectors"
-                                    class="w-4 h-4 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg">
+                                    class="w-5 h-5 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg cursor-pointer">
                                 <span class="text-sm">Velocity Vectors (v, vx, vy)</span>
                             </label>
                             <label class="flex items-center gap-3 cursor-pointer group">
                                 <input type="checkbox" id="chk-show-ideal"
-                                    class="w-4 h-4 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg">
+                                    class="w-5 h-5 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg cursor-pointer">
                                 <span class="text-sm">Compare with Ideal Path</span>
                             </label>
                             <label class="flex items-center gap-3 cursor-pointer group">
                                 <input type="checkbox" id="chk-keep-history"
-                                    class="w-4 h-4 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg">
+                                    class="w-5 h-5 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg cursor-pointer">
                                 <span class="text-sm">Show Trajectory History</span>
                             </label>
                         </div>
@@ -199,14 +224,14 @@
                             <div class="space-y-2 text-[0.7rem] uppercase font-mono">
                                 <div class="flex justify-between mb-1"><span>Kinetic (KE)</span><span
                                         id="val-ke">0.0</span></div>
-                                <div class="w-full bg-slate-800 h-1 rounded-full">
+                                <div class="w-full bg-slate-800 h-1.5 rounded-full">
                                     <div id="bar-ke" class="bg-brand-accent h-full transition-all duration-75"
                                         style="width: 0%"></div>
                                 </div>
 
                                 <div class="flex justify-between mb-1"><span>Potential (PE)</span><span
                                         id="val-pe">0.0</span></div>
-                                <div class="w-full bg-slate-800 h-1 rounded-full">
+                                <div class="w-full bg-slate-800 h-1.5 rounded-full">
                                     <div id="bar-pe" class="bg-red-500 h-full transition-all duration-75"
                                         style="width: 0%"></div>
                                 </div>
@@ -218,7 +243,7 @@
 
                         <!-- Formulas -->
                         <div
-                            class="formula-box bg-brand-bg/60 p-4 rounded-lg border border-sky-500/10 font-math italic text-lg leading-relaxed shadow-lg">
+                            class="formula-box bg-brand-bg/60 p-4 rounded-lg border border-sky-500/10 font-math italic text-lg leading-relaxed shadow-lg overflow-x-auto text-center">
                             <p class="mb-3 hover:text-brand-accent transition-colors"><strong
                                     class="not-italic font-sans text-[0.7rem] block text-brand-accent uppercase tracking-widest mb-1">Range
                                     (R)</strong> (u² sin 2θ) / g</p>

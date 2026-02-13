@@ -9,6 +9,9 @@ const graphCanvas = document.getElementById('graphCanvas');
 const btnFire = document.getElementById('btn-fire');
 const btnReset = document.getElementById('btn-reset');
 const btnChallenge = document.getElementById('btn-challenge-start');
+const btnMobileControls = document.getElementById('btn-mobile-controls');
+const btnCloseControls = document.getElementById('btn-close-controls');
+const controlsPanel = document.getElementById('controls-panel');
 
 // Inputs
 const inpVelocity = document.getElementById('inp-velocity');
@@ -128,9 +131,27 @@ function init() {
         btnToggleHub.textContent = hubContent.classList.contains('hidden') ? "Expand" : "Collapse";
     });
 
-    btnFire.addEventListener('click', fireProjectile);
+    btnFire.addEventListener('click', () => {
+        fireProjectile();
+        // Auto-close panel on mobile when firing to show simulation
+        if (window.innerWidth < 1024) {
+            controlsPanel.classList.add('translate-x-full');
+        }
+    });
+
     btnReset.addEventListener('click', resetSimulation);
     btnChallenge.addEventListener('click', startChallenge);
+
+    btnMobileControls.addEventListener('click', () => {
+        controlsPanel.classList.remove('translate-x-full');
+    });
+
+    btnCloseControls.addEventListener('click', () => {
+        controlsPanel.classList.add('translate-x-full');
+    });
+
+    // Make drawFrame accessible to resize observers
+    window.drawFrame = drawFrame;
 
     // Initial render
     renderer.drawGrid();
