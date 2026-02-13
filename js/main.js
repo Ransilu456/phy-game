@@ -41,6 +41,7 @@ const hubContent = document.getElementById('hub-content');
 const chkShowIdeal = document.getElementById('chk-show-ideal');
 const chkKeepHistory = document.getElementById('chk-keep-history');
 const chkShowVectors = document.getElementById('chk-show-vectors');
+const chkAutoZoom = document.getElementById('chk-auto-zoom');
 
 const valKE = document.getElementById('val-ke');
 const valPE = document.getElementById('val-pe');
@@ -113,8 +114,14 @@ function init() {
 
     inpZoom.addEventListener('input', (e) => {
         zoom = parseFloat(e.target.value);
-        renderer.setZoom(zoom);
+        renderer.setZoom(zoom, true);
         dispZoom.textContent = Math.round(zoom * 100);
+
+        // Disable auto-zoom if manually adjusted
+        if (chkAutoZoom.checked) {
+            chkAutoZoom.checked = false;
+        }
+
         drawFrame();
     });
 
@@ -212,6 +219,13 @@ function resetSimulation() {
     renderer.clear();
     renderer.drawGrid();
 
+    // Reset zoom gracefully if auto-zoom was on
+    if (chkAutoZoom.checked) {
+        renderer.setZoom(1.0);
+    } else {
+        renderer.setZoom(zoom, true);
+    }
+
     if (game.isActive) {
         renderer.drawTarget(game.targetDist, game.targetWidth);
     }
@@ -228,6 +242,14 @@ function loop(timestamp) {
 
     const cleanDt = Math.min(dt, 0.05);
 
+    // Update zoom animation
+    const zoomChanged = renderer.updateZoom(cleanDt);
+    if (zoomChanged) {
+        // Sync zoom slider for visual feedback
+        inpZoom.value = renderer.targetZoom;
+        dispZoom.textContent = Math.round(renderer.zoom * 100);
+    }
+
     if (isSimulating && projectile) {
         const steps = 5;
         const subDt = cleanDt / steps;
@@ -238,6 +260,35 @@ function loop(timestamp) {
             // Update ideal ghost if enabled
             if (idealProjectile) {
                 idealProjectile.update(subDt, gravity, false);
+            }
+
+            // Smart Auto-Zoom Calculation
+            if (chkAutoZoom.checked) {
+                // Find bounds of current path + projectile
+                let minX = 0, maxX = 0, minY = 0, maxY = 0;
+                projectile.path.forEach(p => {
+                    if (p.x > maxX) maxX = p.x;
+                    if (p.y > maxY) maxY = p.y;
+                });
+
+                // Forecast a bit ahead or include target
+                if (game.isActive) {
+                    if (game.targetDist > maxX) maxX = game.targetDist + 10;
+                }
+
+                // Minimum bounds for small simulations
+                maxX = Math.max(maxX, 50);
+                maxY = Math.max(maxY, 20);
+
+                // Calculate required zoom
+                // We want: maxX * (scale * zoom) < canvasWidth * 0.8
+                // We want: maxY * (scale * zoom) < canvasHeight * 0.8
+                const padding = 0.8;
+                const zoomX = (renderer.canvas.width * padding - renderer.originX) / (maxX * renderer.baseScale);
+                const zoomY = (renderer.canvas.height * padding) / (maxY * renderer.baseScale);
+
+                const idealZoom = Math.min(zoomX, zoomY, 1.5); // Cap zoom in at 1.5
+                renderer.setZoom(idealZoom);
             }
 
             // Analysis & Stats
@@ -270,20 +321,17 @@ function loop(timestamp) {
                 }
 
                 plotter.draw(projectile.path);
-
-                cancelAnimationFrame(animationId);
-                animationId = null;
-                drawFrame();
-                return;
+                // Don't cancel animation frame here, let it finish naturally
             }
         }
     }
 
     drawFrame();
 
-    if (isSimulating) {
+    if (isSimulating || zoomChanged) {
         animationId = requestAnimationFrame((t) => loop(t));
     } else {
+        animationId = null;
         lastTime = 0;
     }
 }

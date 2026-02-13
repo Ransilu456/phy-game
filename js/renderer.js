@@ -6,6 +6,7 @@ export class Renderer {
         // Scale: Pixels per Meter
         this.baseScale = 10;
         this.zoom = 1.0;
+        this.targetZoom = 1.0;
 
         // Origin offset (bottom-left)
         this.originX = 50;
@@ -24,8 +25,20 @@ export class Renderer {
         return this.baseScale * this.zoom;
     }
 
-    setZoom(level) {
-        this.zoom = Math.max(0.1, Math.min(level, 5.0));
+    setZoom(level, immediate = false) {
+        this.targetZoom = Math.max(0.1, Math.min(level, 5.0));
+        if (immediate) this.zoom = this.targetZoom;
+    }
+
+    updateZoom(dt) {
+        const lerpFactor = 2.0; // Adjust for speed of zoom
+        const diff = this.targetZoom - this.zoom;
+        if (Math.abs(diff) < 0.001) {
+            this.zoom = this.targetZoom;
+            return false;
+        }
+        this.zoom += diff * Math.min(1, dt * lerpFactor);
+        return true;
     }
 
     resize() {
