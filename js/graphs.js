@@ -2,13 +2,88 @@ export class GraphPlotter {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
+
+        // Panning state
+        this.panX = 0;
+        this.panY = 0;
+        this.isDragging = false;
+        this.lastMouseX = 0;
+        this.lastMouseY = 0;
+
         this.resize();
+        this.initEvents();
 
         let resizeTimer;
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimer);
             resizeTimer = setTimeout(() => this.resize(), 100);
         });
+    }
+
+    initEvents() {
+        const onStart = (x, y) => {
+            if (this.isMouseInside(x, y)) {
+                this.isDragging = true;
+                this.lastMouseX = x;
+                this.lastMouseY = y;
+                this.canvas.style.cursor = 'grabbing';
+            }
+        };
+
+        const onMove = (x, y) => {
+            if (this.isDragging) {
+                const dx = x - this.lastMouseX;
+                const dy = y - this.lastMouseY;
+                this.panX += dx;
+                this.panY += dy;
+                this.lastMouseX = x;
+                this.lastMouseY = y;
+                if (window.drawFrame) window.drawFrame();
+            }
+        };
+
+        const onEnd = () => {
+            this.isDragging = false;
+            this.canvas.style.cursor = 'grab';
+        };
+
+        this.canvas.addEventListener('mousedown', e => {
+            const rect = this.canvas.getBoundingClientRect();
+            onStart(e.clientX - rect.left, e.clientY - rect.top);
+        });
+
+        window.addEventListener('mousemove', e => {
+            const rect = this.canvas.getBoundingClientRect();
+            onMove(e.clientX - rect.left, e.clientY - rect.top);
+        });
+
+        window.addEventListener('mouseup', onEnd);
+        this.canvas.style.cursor = 'grab';
+
+        // Touch events
+        this.canvas.addEventListener('touchstart', e => {
+            const rect = this.canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            onStart(touch.clientX - rect.left, touch.clientY - rect.top);
+            e.preventDefault();
+        }, { passive: false });
+
+        window.addEventListener('touchmove', e => {
+            const rect = this.canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            onMove(touch.clientX - rect.left, touch.clientY - rect.top);
+        }, { passive: false });
+
+        window.addEventListener('touchend', onEnd);
+    }
+
+    isMouseInside(x, y) {
+        return x >= 0 && x <= this.canvas.clientWidth && y >= 0 && y <= this.canvas.clientHeight;
+    }
+
+    resetPan() {
+        this.panX = 0;
+        this.panY = 0;
     }
 
     resize() {
@@ -61,9 +136,9 @@ export class GraphPlotter {
         ctx.save();
         ctx.translate(xOffset, yOffset);
 
-        // Axes
-        ctx.strokeStyle = '#64748b'; // Brighter slate
-        ctx.lineWidth = 2; // Thicker axes
+        // Axes (Static background)
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(padding, padding);
         ctx.lineTo(padding, h - padding);
@@ -71,7 +146,7 @@ export class GraphPlotter {
         ctx.stroke();
 
         // Title
-        ctx.fillStyle = '#cbd5e1'; // Brighter text
+        ctx.fillStyle = '#cbd5e1';
         ctx.font = 'bold 12px sans-serif';
         ctx.fillText(title, padding, padding - 10);
 
@@ -80,11 +155,17 @@ export class GraphPlotter {
             return;
         }
 
-        // Find Scalers
-        // Assume t starts at 0
-        const maxT = data[data.length - 1].time;
+        // Clipping region for data
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(padding, padding, graphW, graphH);
+        ctx.clip();
 
-        // Find min/max for Y
+        // Apply Pan
+        ctx.translate(this.panX, this.panY);
+
+        // Find Scalers
+        const maxT = data[data.length - 1].time;
         let maxY = -Infinity;
         let minY = Infinity;
 
@@ -93,11 +174,8 @@ export class GraphPlotter {
             if (p[keyY] < minY) minY = p[keyY];
         }
 
-        // Force Y axis to include 0 if possible, or center
         if (minY > 0) minY = 0;
         if (maxY < 0) maxY = 0;
-
-        // Add headroom
         const rangeY = (maxY - minY) || 1;
 
         ctx.strokeStyle = '#22c55e';
@@ -106,15 +184,8 @@ export class GraphPlotter {
 
         for (let i = 0; i < data.length; i++) {
             const p = data[i];
-
-            // Normalize X (Time)
             const nx = (p[keyX] / maxT) * graphW;
             const px = padding + nx;
-
-            // Normalize Y
-            // height - padding is Y=minY (approximately)
-            // padding is Y=maxY
-
             const ny = ((p[keyY] - minY) / rangeY) * graphH;
             const py = (h - padding) - ny;
 
@@ -123,6 +194,7 @@ export class GraphPlotter {
         }
 
         ctx.stroke();
-        ctx.restore();
+        ctx.restore(); // End clipping & pan
+        ctx.restore(); // End xOffset/yOffset
     }
 }

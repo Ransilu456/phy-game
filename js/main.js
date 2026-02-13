@@ -205,6 +205,7 @@ function fireProjectile() {
     game.lastHeight = 0;
 
     // Clear graphs
+    plotter.resetPan();
     plotter.draw([]);
 
     loop();
@@ -218,6 +219,7 @@ function resetSimulation() {
     historyTrajectories = [];
     renderer.clear();
     renderer.drawGrid();
+    plotter.resetPan();
 
     // Reset zoom gracefully if auto-zoom was on
     if (chkAutoZoom.checked) {
