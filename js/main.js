@@ -262,43 +262,6 @@ function loop(timestamp) {
                 idealProjectile.update(subDt, gravity, false);
             }
 
-            // Smart Auto-Zoom Calculation
-            if (chkAutoZoom.checked) {
-                // Find bounds of current path + projectile
-                let minX = 0, maxX = 0, minY = 0, maxY = 0;
-                projectile.path.forEach(p => {
-                    if (p.x > maxX) maxX = p.x;
-                    if (p.y > maxY) maxY = p.y;
-                });
-
-                // Forecast a bit ahead or include target
-                if (game.isActive) {
-                    if (game.targetDist > maxX) maxX = game.targetDist + 10;
-                }
-
-                // Minimum bounds for small simulations
-                maxX = Math.max(maxX, 50);
-                maxY = Math.max(maxY, 20);
-
-                // Calculate required zoom
-                // We want: maxX * (scale * zoom) < canvasWidth * 0.8
-                // We want: maxY * (scale * zoom) < canvasHeight * 0.8
-                const padding = 0.8;
-                const zoomX = (renderer.canvas.width * padding - renderer.originX) / (maxX * renderer.baseScale);
-                const zoomY = (renderer.canvas.height * padding) / (maxY * renderer.baseScale);
-
-                const idealZoom = Math.min(zoomX, zoomY, 1.5); // Cap zoom in at 1.5
-                renderer.setZoom(idealZoom);
-            }
-
-            // Analysis & Stats
-            updateEnergyDisplay(projectile);
-
-            if (projectile.y > game.lastHeight) {
-                game.lastHeight = projectile.y;
-                valHeight.textContent = game.lastHeight.toFixed(2);
-            }
-
             const collision = game.checkCollision(projectile);
 
             if (collision.ground || projectile.y < -10 || projectile.x > 1000) {
@@ -323,6 +286,45 @@ function loop(timestamp) {
                 plotter.draw(projectile.path);
                 // Don't cancel animation frame here, let it finish naturally
             }
+        }
+
+        // Analysis & Stats (Run once per frame)
+        updateEnergyDisplay(projectile);
+
+        if (projectile.y > game.lastHeight) {
+            game.lastHeight = projectile.y;
+            valHeight.textContent = game.lastHeight.toFixed(2);
+        }
+
+        // Smart Auto-Zoom Calculation (Run once per frame)
+        if (chkAutoZoom.checked) {
+            // Use incrementally updated bbox for efficiency
+            let { maxX, maxY } = projectile.bbox;
+
+            // Proactive Lookahead: Consider current velocity
+            const lookaheadTime = 1.0; // 1 second ahead
+            const futureX = projectile.x + projectile.vx * lookaheadTime;
+            const futureY = projectile.y + projectile.vy * lookaheadTime;
+
+            maxX = Math.max(maxX, projectile.x, futureX);
+            maxY = Math.max(maxY, projectile.y, futureY);
+
+            // Include target in view
+            if (game.isActive) {
+                maxX = Math.max(maxX, game.targetDist + 10);
+            }
+
+            // Minimum bounds for small simulations
+            maxX = Math.max(maxX, 40);
+            maxY = Math.max(maxY, 15);
+
+            // Calculate required zoom with aggressive padding for proactive feel
+            const padding = 0.75;
+            const zoomX = (renderer.canvas.width * padding - renderer.originX) / (maxX * renderer.baseScale);
+            const zoomY = (renderer.canvas.height * padding) / (maxY * renderer.baseScale);
+
+            const idealZoom = Math.min(zoomX, zoomY, 1.5);
+            renderer.setZoom(idealZoom);
         }
     }
 

@@ -75,6 +75,9 @@ export class Projectile {
 
         this.path = [{ x, y, vx: this.vx, vy: this.vy, time: 0 }];
         this.radius = 0.5;
+
+        // Bounding box for auto-zoom optimization
+        this.bbox = { minX: x, maxX: x, minY: y, maxY: y };
     }
 
     update(dt, gravity, airResistanceEnabled) {
@@ -120,6 +123,10 @@ export class Projectile {
                 vy: this.vy,
                 time: this.time
             });
+
+            // Update bbox
+            if (this.x > this.bbox.maxX) this.bbox.maxX = this.x;
+            if (this.y > this.bbox.maxY) this.bbox.maxY = this.y;
         }
     }
 }

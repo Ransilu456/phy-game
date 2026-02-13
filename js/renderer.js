@@ -31,7 +31,7 @@ export class Renderer {
     }
 
     updateZoom(dt) {
-        const lerpFactor = 2.0; // Adjust for speed of zoom
+        const lerpFactor = 4.0; // Increased from 2.0 for faster responsiveness
         const diff = this.targetZoom - this.zoom;
         if (Math.abs(diff) < 0.001) {
             this.zoom = this.targetZoom;
