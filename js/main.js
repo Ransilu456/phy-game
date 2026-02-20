@@ -1,4 +1,15 @@
-import { Projectile } from './engine.js';
+import { Projectile, wrapWasmFunctions } from './engine.js';
+
+// WASM Initialization
+window.onWasmReady = () => {
+    console.log("Initializing WASM Physics Bridge...");
+    window.wasmPhysics = wrapWasmFunctions(window.Module);
+};
+
+// If WASM already loaded (e.g. from cache)
+if (window.wasmReady) {
+    window.onWasmReady();
+}
 import { Renderer } from './renderer.js';
 import { Game } from './game.js';
 import { GraphPlotter } from './graphs.js';
@@ -19,6 +30,19 @@ const inpAngle = document.getElementById('inp-angle');
 const inpGravity = document.getElementById('inp-gravity');
 const chkAirRes = document.getElementById('chk-air-resistance');
 const selPlanet = document.getElementById('sel-planet');
+
+const chkMissileMode = document.getElementById('chk-missile-mode');
+const missileParams = document.getElementById('missile-params');
+const inpThrust = document.getElementById('inp-thrust');
+const inpFuel = document.getElementById('inp-fuel');
+const dispThrust = document.getElementById('disp-thrust');
+const dispFuel = document.getElementById('disp-fuel');
+
+const chkRelVel = document.getElementById('chk-rel-vel');
+const relVelHud = document.getElementById('rel-vel-hud');
+const valRelV = document.getElementById('val-rel-v');
+
+const chkShowAccel = document.getElementById('chk-show-accel');
 
 // Displays
 const dispVelocity = document.getElementById('disp-velocity');
@@ -57,6 +81,7 @@ const plotter = new GraphPlotter(graphCanvas);
 const game = new Game();
 
 let projectile = null;
+let previousProjectile = null; // For relative velocity
 let idealProjectile = null; // ghost path
 let historyTrajectories = [];
 
@@ -71,6 +96,13 @@ let gravity = 9.81;
 let airResistance = false;
 let zoom = 1.0;
 let showVectors = false;
+let showAcceleration = false;
+let missileMode = false;
+let thrust = 0;
+let fuel = 0;
+
+// Input State
+const keys = {};
 
 // Init
 function init() {
@@ -78,6 +110,15 @@ function init() {
 
     // Resize observers are handled in classes, but initial draw needed
     drawFrame();
+
+    // Keyboard Listeners
+    window.addEventListener('keydown', (e) => {
+        keys[e.code] = true;
+        handleInputs();
+    });
+    window.addEventListener('keyup', (e) => {
+        keys[e.code] = false;
+    });
 
     // Event Listeners
     inpVelocity.addEventListener('input', (e) => {
@@ -101,6 +142,43 @@ function init() {
 
     chkShowVectors.addEventListener('change', (e) => {
         showVectors = e.target.checked;
+        drawFrame();
+    });
+
+    chkShowAccel.addEventListener('change', (e) => {
+        showAcceleration = e.target.checked;
+        drawFrame();
+    });
+
+    chkMissileMode.addEventListener('change', (e) => {
+        missileMode = e.target.checked;
+        missileParams.classList.toggle('hidden', !missileMode);
+
+        // Update document theme for Missile Mode
+        document.documentElement.classList.toggle('missile-alert', missileMode);
+
+        if (!missileMode) {
+            thrust = 0;
+            fuel = 0;
+        } else {
+            thrust = parseFloat(inpThrust.value);
+            fuel = parseFloat(inpFuel.value);
+        }
+    });
+
+    inpThrust.addEventListener('input', (e) => {
+        thrust = parseFloat(e.target.value);
+        dispThrust.textContent = thrust;
+        if (projectile && missileMode) projectile.setThrust(thrust);
+    });
+
+    inpFuel.addEventListener('input', (e) => {
+        fuel = parseFloat(e.target.value);
+        dispFuel.textContent = fuel;
+    });
+
+    chkRelVel.addEventListener('change', (e) => {
+        relVelHud.classList.toggle('hidden', !e.target.checked);
         drawFrame();
     });
 
@@ -215,10 +293,29 @@ function init() {
     renderer.drawGrid();
 }
 
+function handleInputs() {
+    if (!isSimulating || !projectile || !missileMode) return;
+
+    // Steering (A/D or Arrows)
+    const turnSpeed = 2; // Degrees per frame roughly
+    if (keys['ArrowLeft'] || keys['KeyA']) {
+        projectile.setHeading(projectile.heading + turnSpeed);
+    }
+    if (keys['ArrowRight'] || keys['KeyD']) {
+        projectile.setHeading(projectile.heading - turnSpeed);
+    }
+
+    // Thrust (Space)
+    const activeThrust = keys['Space'] ? parseFloat(inpThrust.value) || 20 : 0;
+    projectile.setThrust(activeThrust);
+}
+
 function updateDisplays() {
     dispVelocity.textContent = velocity;
     dispAngle.textContent = angle;
     dispGravity.textContent = gravity;
+    dispThrust.textContent = thrust;
+    dispFuel.textContent = fuel;
 }
 
 function startChallenge() {
@@ -241,12 +338,17 @@ function fireProjectile() {
         if (historyTrajectories.length > 5) historyTrajectories.shift();
     }
 
-    projectile = new Projectile(0, 0, velocity, angle);
+    if (projectile) {
+        previousProjectile = projectile; // Store for relative velocity
+    }
 
-    // Ideal projectile (no air resistance)
-    if (chkShowIdeal.checked && airResistance) {
-        idealProjectile = new Projectile(0, 0, velocity, angle);
-        idealProjectile.useWasm = false; // Force JS for comparison to avoid WASM sync issues
+    projectile = new Projectile(0, 0, velocity, angle, missileMode ? 0 : thrust, fuel);
+    if (missileMode) projectile.setThrust(0); // Start off, let user press Space
+
+    // Ideal projectile (no air resistance, no thrust for pure gravity comparison)
+    if (chkShowIdeal.checked && (airResistance || missileMode)) {
+        idealProjectile = new Projectile(0, 0, velocity, angle, 0, 0);
+        idealProjectile.useWasm = false;
         idealProjectile.isIdeal = true;
     } else {
         idealProjectile = null;
@@ -259,13 +361,14 @@ function fireProjectile() {
     plotter.resetPan();
     plotter.draw([]);
 
-    loop();
+    animationId = requestAnimationFrame(loop);
 }
 
 function resetSimulation() {
     cancelAnimationFrame(animationId);
     isSimulating = false;
     projectile = null;
+    previousProjectile = null;
     idealProjectile = null;
     historyTrajectories = [];
     renderer.clear();
@@ -287,12 +390,20 @@ function resetSimulation() {
     valRange.textContent = "0.00";
     valHeight.textContent = "0.00";
     valTime.textContent = "0.00";
+    valRelV.textContent = "0.00 m/s";
 }
 
 function loop(timestamp) {
+    if (!timestamp) {
+        animationId = requestAnimationFrame(loop);
+        return;
+    }
     if (!lastTime) lastTime = timestamp;
-    const dt = (timestamp - lastTime) / 1000;
+    let dt = (timestamp - lastTime) / 1000;
     lastTime = timestamp;
+
+    // Guard against NaN or extreme jumps
+    if (!isFinite(dt) || dt > 0.1) dt = 0.016;
 
     const cleanDt = Math.min(dt, 0.05);
 
@@ -305,6 +416,8 @@ function loop(timestamp) {
     }
 
     if (isSimulating && projectile) {
+        handleInputs(); // Process real-time inputs per frame
+
         const steps = 5;
         const subDt = cleanDt / steps;
 
@@ -336,8 +449,6 @@ function loop(timestamp) {
                         startChallenge();
                     }
                 }
-
-                // Don't cancel animation frame here, let it finish naturally
             }
         }
 
@@ -349,13 +460,21 @@ function loop(timestamp) {
             valHeight.textContent = game.lastHeight.toFixed(2);
         }
 
+        // Relative Velocity Calculation
+        if (previousProjectile && chkRelVel.checked) {
+            const relVx = projectile.vx - previousProjectile.vx;
+            const relVy = projectile.vy - previousProjectile.vy;
+            const relV = Math.sqrt(relVx * relVx + relVy * relVy);
+            valRelV.textContent = relV.toFixed(2) + " m/s";
+        }
+
         // Smart Auto-Zoom Calculation (Run once per frame)
         if (chkAutoZoom.checked) {
             // Use incrementally updated bbox for efficiency
             let { maxX, maxY } = projectile.bbox;
 
-            // Proactive Lookahead: Consider current velocity
-            const lookaheadTime = 1.0; // 1 second ahead
+            // Proactive Lookahead
+            const lookaheadTime = 1.0;
             const futureX = projectile.x + projectile.vx * lookaheadTime;
             const futureY = projectile.y + projectile.vy * lookaheadTime;
 
@@ -367,11 +486,9 @@ function loop(timestamp) {
                 maxX = Math.max(maxX, game.targetDist + 10);
             }
 
-            // Minimum bounds for small simulations
             maxX = Math.max(maxX, 40);
             maxY = Math.max(maxY, 15);
 
-            // Calculate required zoom with aggressive padding for proactive feel
             const padding = 0.75;
             const zoomX = (renderer.canvas.width * padding - renderer.originX) / (maxX * renderer.baseScale);
             const zoomY = (renderer.canvas.height * padding) / (maxY * renderer.baseScale);
@@ -395,7 +512,6 @@ function loop(timestamp) {
 }
 
 function updateEnergyDisplay(p) {
-    // Energy per unit mass (J/kg)
     const v2 = p.vx * p.vx + p.vy * p.vy;
     const ke = 0.5 * v2;
     const pe = gravity * Math.max(0, p.y);
@@ -405,7 +521,6 @@ function updateEnergyDisplay(p) {
     valPE.textContent = pe.toFixed(1);
     valTE.textContent = te.toFixed(1);
 
-    // Dynamic bar scaling (assume max energy ref is initial KE + PE)
     if (!game.maxEnergy || !isSimulating) {
         game.maxEnergy = te || 100;
     }
@@ -431,11 +546,16 @@ function drawFrame() {
     }
 
     if (idealProjectile) {
-        renderer.drawPath(idealProjectile.path, 'rgba(234, 179, 8, 0.3)', 1, true);
+        renderer.drawProjectile(idealProjectile, false, false, "Ideal");
+    }
+
+    if (previousProjectile && chkRelVel.checked) {
+        renderer.drawProjectile(previousProjectile, false, false, "Prev");
+        renderer.drawRelativeVelocity(previousProjectile, projectile);
     }
 
     if (projectile) {
-        renderer.drawProjectile(projectile, showVectors);
+        renderer.drawProjectile(projectile, showVectors, showAcceleration, missileMode ? "Missile" : "Ball");
 
         valRange.textContent = projectile.x.toFixed(2);
         valTime.textContent = projectile.time.toFixed(2);
@@ -456,23 +576,27 @@ function loadPreset(preset) {
             velocity = 30;
             angle = 45;
             airResistance = false;
+            missileMode = false;
             break;
         case 'moon-jump':
             velocity = 20;
             angle = 45;
             gravity = 1.62;
             airResistance = false;
+            missileMode = false;
             break;
         case 'air-drag-test':
             velocity = 50;
             angle = 30;
             airResistance = true;
+            missileMode = false;
             break;
         case 'zero-g':
             velocity = 15;
             angle = 10;
             gravity = 0;
             airResistance = false;
+            missileMode = false;
             break;
     }
 
@@ -481,6 +605,8 @@ function loadPreset(preset) {
     inpAngle.value = angle;
     inpGravity.value = gravity;
     chkAirRes.checked = airResistance;
+    chkMissileMode.checked = missileMode;
+    missileParams.classList.toggle('hidden', !missileMode);
 
     updateDisplays();
     drawFrame();

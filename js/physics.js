@@ -690,25 +690,39 @@ createWasm();
 // Imports from the Wasm binary.
 var ___wasm_call_ctors = () => (___wasm_call_ctors = wasmExports["b"])();
 
-var _init_projectile = Module["_init_projectile"] = (a0, a1, a2, a3) => (_init_projectile = Module["_init_projectile"] = wasmExports["c"])(a0, a1, a2, a3);
+var _init_projectile = Module["_init_projectile"] = (a0, a1, a2, a3, a4, a5, a6) => (_init_projectile = Module["_init_projectile"] = wasmExports["c"])(a0, a1, a2, a3, a4, a5, a6);
 
-var _update_projectile = Module["_update_projectile"] = (a0, a1, a2) => (_update_projectile = Module["_update_projectile"] = wasmExports["d"])(a0, a1, a2);
+var _set_heading = Module["_set_heading"] = (a0, a1) => (_set_heading = Module["_set_heading"] = wasmExports["d"])(a0, a1);
 
-var _get_x = Module["_get_x"] = () => (_get_x = Module["_get_x"] = wasmExports["e"])();
+var _set_thrust = Module["_set_thrust"] = (a0, a1) => (_set_thrust = Module["_set_thrust"] = wasmExports["e"])(a0, a1);
 
-var _get_y = Module["_get_y"] = () => (_get_y = Module["_get_y"] = wasmExports["f"])();
+var _update_projectile = Module["_update_projectile"] = (a0, a1, a2, a3) => (_update_projectile = Module["_update_projectile"] = wasmExports["f"])(a0, a1, a2, a3);
 
-var _get_vx = Module["_get_vx"] = () => (_get_vx = Module["_get_vx"] = wasmExports["g"])();
+var _get_x = Module["_get_x"] = a0 => (_get_x = Module["_get_x"] = wasmExports["g"])(a0);
 
-var _get_vy = Module["_get_vy"] = () => (_get_vy = Module["_get_vy"] = wasmExports["h"])();
+var _get_y = Module["_get_y"] = a0 => (_get_y = Module["_get_y"] = wasmExports["h"])(a0);
 
-var _get_time = Module["_get_time"] = () => (_get_time = Module["_get_time"] = wasmExports["i"])();
+var _get_vx = Module["_get_vx"] = a0 => (_get_vx = Module["_get_vx"] = wasmExports["i"])(a0);
 
-var __emscripten_stack_restore = a0 => (__emscripten_stack_restore = wasmExports["j"])(a0);
+var _get_vy = Module["_get_vy"] = a0 => (_get_vy = Module["_get_vy"] = wasmExports["j"])(a0);
 
-var __emscripten_stack_alloc = a0 => (__emscripten_stack_alloc = wasmExports["k"])(a0);
+var _get_ax = Module["_get_ax"] = a0 => (_get_ax = Module["_get_ax"] = wasmExports["k"])(a0);
 
-var _emscripten_stack_get_current = () => (_emscripten_stack_get_current = wasmExports["l"])();
+var _get_ay = Module["_get_ay"] = a0 => (_get_ay = Module["_get_ay"] = wasmExports["l"])(a0);
+
+var _get_time = Module["_get_time"] = a0 => (_get_time = Module["_get_time"] = wasmExports["m"])(a0);
+
+var _get_fuel = Module["_get_fuel"] = a0 => (_get_fuel = Module["_get_fuel"] = wasmExports["n"])(a0);
+
+var _get_heading = Module["_get_heading"] = a0 => (_get_heading = Module["_get_heading"] = wasmExports["o"])(a0);
+
+var _is_active = Module["_is_active"] = a0 => (_is_active = Module["_is_active"] = wasmExports["p"])(a0);
+
+var __emscripten_stack_restore = a0 => (__emscripten_stack_restore = wasmExports["q"])(a0);
+
+var __emscripten_stack_alloc = a0 => (__emscripten_stack_alloc = wasmExports["r"])(a0);
+
+var _emscripten_stack_get_current = () => (_emscripten_stack_get_current = wasmExports["s"])();
 
 // include: postamble.js
 // === Auto-generated postamble setup entry stuff ===

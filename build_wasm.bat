@@ -33,7 +33,7 @@ emcc cpp/physics.cpp ^
  --minify 0 ^
  -sWASM=1 ^
  -sEXPORTED_RUNTIME_METHODS=['cwrap'] ^
- -sEXPORTED_FUNCTIONS=['_init_projectile','_update_projectile','_get_x','_get_y','_get_vx','_get_vy','_get_time'] ^
+ -s EXPORTED_FUNCTIONS="['_init_projectile', '_update_projectile', '_get_x', '_get_y', '_get_vx', '_get_vy', '_get_ax', '_get_ay', '_get_time', '_get_fuel', '_get_heading', '_is_active', '_set_heading', '_set_thrust']" ^
  -sALLOW_MEMORY_GROWTH=1
 
 REM ------------------------------------------

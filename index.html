@@ -25,17 +25,39 @@
                     },
                     colors: {
                         brand: {
-                            bg: '#0f172a',
+                            bg: 'var(--brand-bg)',
                             panel: '#1e293b',
-                            accent: '#38bdf8',
-                            'accent-hover': '#0ea5e9',
-                            border: '#334155',
+                            accent: 'var(--brand-accent)',
+                            'accent-hover': 'var(--brand-accent-hover)',
+                            border: 'var(--brand-border)',
                         }
                     }
                 }
             }
         }
     </script>
+    <style>
+        :root {
+            --brand-bg: #0f172a;
+            --brand-accent: #38bdf8;
+            --brand-accent-hover: #0ea5e9;
+            --brand-border: #334155;
+        }
+
+        .missile-alert:root {
+            --brand-bg: #1a0f0f;
+            --brand-accent: #fb923c;
+            --brand-accent-hover: #f97316;
+            --brand-border: #451a1a;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            /* Kept original font-family from Tailwind config */
+            background-color: var(--brand-bg);
+            transition: background-color 0.5s ease;
+        }
+    </style>
 
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -117,6 +139,7 @@
                             <input type="range" id="inp-velocity" min="0" max="100" step="0.1" value="20"
                                 class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-brand-accent">
                         </label>
+                        </label>
                         <label class="block text-sm">
                             <div class="flex justify-between mb-1 text-slate-300">
                                 <span>Launch Angle (θ)</span>
@@ -125,6 +148,39 @@
                             <input type="range" id="inp-angle" min="0" max="90" step="1" value="45"
                                 class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-brand-accent">
                         </label>
+
+                        <!-- Missile System (New) -->
+                        <div id="missile-controls" class="pt-2 border-t border-brand-border/30 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs uppercase font-bold text-slate-400">Missile Mode</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="chk-missile-mode" class="sr-only peer">
+                                    <div
+                                        class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500">
+                                    </div>
+                                </label>
+                            </div>
+                            <div id="missile-params" class="hidden space-y-2">
+                                <label class="block text-xs">
+                                    <div class="flex justify-between mb-1">
+                                        <span>Engine Thrust (a)</span>
+                                        <span class="text-orange-400 font-bold"><span id="disp-thrust">0</span>
+                                            m/s²</span>
+                                    </div>
+                                    <input type="range" id="inp-thrust" min="0" max="50" step="1" value="0"
+                                        class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500">
+                                </label>
+                                <label class="block text-xs">
+                                    <div class="flex justify-between mb-1">
+                                        <span>Fuel Duration (t_f)</span>
+                                        <span class="text-orange-400 font-bold"><span id="disp-fuel">0</span> s</span>
+                                    </div>
+                                    <input type="range" id="inp-fuel" min="0" max="10" step="0.1" value="0"
+                                        class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500">
+                                </label>
+                            </div>
+                        </div>
+
                         <label class="block text-sm">
                             <div class="flex justify-between mb-1 text-slate-300">
                                 <span>Gravity (g)</span>
@@ -158,6 +214,28 @@
                             <span class="text-sm group-hover:text-brand-accent transition-colors">Apply Air
                                 Resistance</span>
                         </label>
+                    </section>
+
+                    <section class="space-y-3">
+                        <h3
+                            class="text-brand-accent font-bold border-b border-brand-border pb-1 text-sm uppercase tracking-wider">
+                            Relative Velocity</h3>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-3 cursor-pointer group select-none">
+                                <input type="checkbox" id="chk-rel-vel"
+                                    class="w-5 h-5 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg cursor-pointer">
+                                <span class="text-sm group-hover:text-brand-accent transition-colors">Show Relative
+                                    Vectors</span>
+                            </label>
+                            <div id="rel-vel-hud"
+                                class="hidden p-2 bg-brand-bg/40 rounded border border-brand-border/30 text-[0.7rem] font-mono">
+                                <div class="flex justify-between text-emerald-400">
+                                    <span>V_rel:</span>
+                                    <span id="val-rel-v">0.00 m/s</span>
+                                </div>
+                                <div class="text-slate-500 text-[0.6rem] mt-1 italic">Relative to previous launch</div>
+                            </div>
+                        </div>
                     </section>
 
                     <section class="space-y-3">
@@ -211,15 +289,44 @@
                                 <span class="text-sm">Velocity Vectors (v, vx, vy)</span>
                             </label>
                             <label class="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" id="chk-show-ideal"
+                                <input type="checkbox" id="chk-show-accel"
                                     class="w-5 h-5 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg cursor-pointer">
-                                <span class="text-sm">Compare with Ideal Path</span>
+                                <span class="text-sm">Acceleration Vector (a)</span>
                             </label>
+
+                            <!-- Mission Briefing (New) -->
+                            <div class="mt-4 pt-4 border-t border-brand-border/30">
+                                <h4 class="text-[0.65rem] uppercase tracking-widest text-orange-500 font-bold mb-2">
+                                    Missile Mission Briefing</h4>
+                                <ul class="text-[0.75rem] text-slate-400 space-y-2">
+                                    <li class="flex gap-2">
+                                        <span
+                                            class="text-orange-400 font-bold text-[0.6rem] bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20">SPACE</span>
+                                        <span>Apply Engine Thrust</span>
+                                    </li>
+                                    <li class="flex gap-2">
+                                        <span
+                                            class="text-orange-400 font-bold text-[0.6rem] bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20">←
+                                            / →</span>
+                                        <span>Steer Missile (Heading)</span>
+                                    </li>
+                                    <li class="italic text-[0.65rem] text-slate-500 mt-2">
+                                        Tip: Conserve fuel! High-speed long-distance hits earn more points in challenge
+                                        mode.
+                                    </li>
+                                </ul>
+                            </div>
                             <label class="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" id="chk-keep-history"
-                                    class="w-5 h-5 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg cursor-pointer">
-                                <span class="text-sm">Show Trajectory History</span>
-                            </label>
+                                <label class="flex items-center gap-3 cursor-pointer group">
+                                    <input type="checkbox" id="chk-show-ideal"
+                                        class="w-5 h-5 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg cursor-pointer">
+                                    <span class="text-sm">Compare with Ideal Path</span>
+                                </label>
+                                <label class="flex items-center gap-3 cursor-pointer group">
+                                    <input type="checkbox" id="chk-keep-history"
+                                        class="w-5 h-5 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg cursor-pointer">
+                                    <span class="text-sm">Show Trajectory History</span>
+                                </label>
                         </div>
 
                         <!-- Energy Dashboard -->

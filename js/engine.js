@@ -1,146 +1,202 @@
-// Fallback JS Physics (Same as before)
+export function wrapWasmFunctions(Module) {
+    if (!Module) return null;
+
+    // Helper to get function either from Module (global) or Module.wasmExports (raw)
+    const getFunc = (name) => {
+        const func = Module[name] || (Module.asm && Module.asm[name]) || (Module.wasmExports && Module.wasmExports[name]);
+        if (!func) console.warn(`WASM function ${name} not found!`);
+        return func;
+    };
+
+    const _init = getFunc('_init_projectile');
+    const _update = getFunc('_update_projectile');
+    const _getX = getFunc('_get_x');
+    const _getY = getFunc('_get_y');
+    const _getVX = getFunc('_get_vx');
+    const _getVY = getFunc('_get_vy');
+    const _getAX = getFunc('_get_ax');
+    const _getAY = getFunc('_get_ay');
+    const _getTime = getFunc('_get_time');
+    const _getFuel = getFunc('_get_fuel');
+    const _getHeading = getFunc('_get_heading');
+    const _isActive = getFunc('_is_active');
+    const _setHeading = getFunc('_set_heading');
+    const _setThrust = getFunc('_set_thrust');
+
+    if (!_init || !_update) {
+        console.error("Critical WASM functions missing. Falling back to JS physics.");
+        return null;
+    }
+
+    return {
+        init: (id, x, y, speed, angle, thrust, fuel) => _init(id, x, y, speed, angle, thrust, fuel),
+        update: (id, dt, g, air) => _update(id, dt, g, air ? 1 : 0),
+        getX: (id) => _getX(id),
+        getY: (id) => _getY(id),
+        getVX: (id) => _getVX(id),
+        getVY: (id) => _getVY(id),
+        getAX: (id) => _getAX(id),
+        getAY: (id) => _getAY(id),
+        getTime: (id) => _getTime(id),
+        getFuel: (id) => (_getFuel ? _getFuel(id) : 0),
+        getHeading: (id) => (_getHeading ? _getHeading(id) : 0),
+        isActive: (id) => _isActive(id),
+        setHeading: (id, angle) => _setHeading && _setHeading(id, angle),
+        setThrust: (id, thrust) => _setThrust && _setThrust(id, thrust)
+    };
+}
+
+// Fallback logic for when WASM core is not available
 class JSPhysics {
-    constructor(x, y, speed, angleDeg) {
-        this.x = x;
-        this.y = y;
-        const angleRad = angleDeg * (Math.PI / 180);
-        this.vx = speed * Math.cos(angleRad);
-        this.vy = speed * Math.sin(angleRad);
-        this.time = 0;
+    constructor() {
+        this.projectiles = {};
     }
 
-    update(dt, gravity, airResistanceEnabled) {
-        this.time += dt;
-        let ax = 0;
-        let ay = -gravity;
-        if (airResistanceEnabled) {
-            const k = 0.2;
-            ax -= k * this.vx;
-            ay -= k * this.vy;
+    init(id, x, y, speed, angle, thrust, fuel) {
+        const rad = angle * Math.PI / 180;
+        this.projectiles[id] = {
+            x, y,
+            vx: speed * Math.cos(rad),
+            vy: speed * Math.sin(rad),
+            ax: 0, ay: 0,
+            time: 0,
+            thrust, fuel,
+            heading: rad,
+            isActive: true
+        };
+    }
+
+    setHeading(id, angleDeg) {
+        if (this.projectiles[id]) {
+            this.projectiles[id].heading = angleDeg * Math.PI / 180;
         }
-        this.vx += ax * dt;
-        this.vy += ay * dt;
-        this.x += this.vx * dt;
-        this.y += this.vy * dt;
     }
+
+    setThrust(id, thrust) {
+        if (this.projectiles[id]) {
+            this.projectiles[id].thrust = thrust;
+        }
+    }
+
+    update(id, dt, g, air) {
+        const p = this.projectiles[id];
+        if (!p || !p.isActive) return;
+
+        p.ax = 0;
+        p.ay = -g;
+
+        if (p.fuel > 0 && p.thrust > 0) {
+            p.ax += p.thrust * Math.cos(p.heading);
+            p.ay += p.thrust * Math.sin(p.heading);
+            p.fuel -= dt;
+            if (p.fuel < 0) p.fuel = 0;
+        }
+
+        if (air) {
+            const v = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+            if (v > 0.1) {
+                const k = 0.05;
+                p.ax -= k * p.vx * v;
+                p.ay -= k * p.vy * v;
+            }
+        }
+
+        p.vx += p.ax * dt;
+        p.vy += p.ay * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.time += dt;
+
+        if (p.y < -50) p.isActive = false;
+    }
+
+    getX(id) { return this.projectiles[id]?.x || 0; }
+    getY(id) { return this.projectiles[id]?.y || 0; }
+    getVX(id) { return this.projectiles[id]?.vx || 0; }
+    getVY(id) { return this.projectiles[id]?.vy || 0; }
+    getAX(id) { return this.projectiles[id]?.ax || 0; }
+    getAY(id) { return this.projectiles[id]?.ay || 0; }
+    getTime(id) { return this.projectiles[id]?.time || 0; }
+    getFuel(id) { return this.projectiles[id]?.fuel || 0; }
+    getHeading(id) { return (this.projectiles[id]?.heading || 0) * 180 / Math.PI; }
+    isActive(id) { return this.projectiles[id]?.isActive ? 1 : 0; }
 }
 
-// WASM Module Loader
-let wasmModule = null;
-let wasmReady = false;
-
-// Try to load the Emscripten generated module
-// This assumes physics.js is loaded via script tag or dynamic import
-// Since we are using modules, we need to be careful.
-// Let's rely on the user dragging the generated physics.js into the folder.
-
-// WASM Function Wrappers
-let init_projectile, update_projectile, get_x, get_y, get_vx, get_vy, get_time;
-
-function wrapWasmFunctions() {
-    if (!window.Module.cwrap) return false;
-
-    init_projectile = window.Module.cwrap('init_projectile', null, ['number', 'number', 'number', 'number']);
-    update_projectile = window.Module.cwrap('update_projectile', null, ['number', 'number', 'number']);
-    get_x = window.Module.cwrap('get_x', 'number', []);
-    get_y = window.Module.cwrap('get_y', 'number', []);
-    get_vx = window.Module.cwrap('get_vx', 'number', []);
-    get_vy = window.Module.cwrap('get_vy', 'number', []);
-    get_time = window.Module.cwrap('get_time', 'number', []);
-
-    return true;
-}
+const jsPhysics = new JSPhysics();
 
 export class Projectile {
-    constructor(x, y, speed, angleDeg) {
-        this.useWasm = !!window.wasmReady && wrapWasmFunctions();
-        this.startX = x;
-        this.startY = y;
+    static nextId = 0;
 
-        if (this.useWasm) {
-            // Re-initialize WASM state
-            init_projectile(x, y, speed, angleDeg);
-            this.vx = get_vx();
-            this.vy = get_vy();
-        } else {
-            console.warn("WASM not ready, using JS fallback");
-            this.jsPhysics = new JSPhysics(x, y, speed, angleDeg);
-            this.vx = this.jsPhysics.vx;
-            this.vy = this.jsPhysics.vy;
-        }
+    constructor(x, y, speed, angleDeg, thrust = 0, fuel = 0) {
+        this.id = Projectile.nextId++;
+        if (Projectile.nextId >= 10) Projectile.nextId = 0;
 
+        this.useWasm = !!window.wasmPhysics;
+        this.physics = this.useWasm ? window.wasmPhysics : jsPhysics;
+
+        this.physics.init(this.id, x, y, speed, angleDeg, thrust, fuel);
+
+        // State for rendering
         this.x = x;
         this.y = y;
+        this.vx = 0;
+        this.vy = 0;
+        this.ax = 0;
+        this.ay = 0;
         this.time = 0;
+        this.fuel = fuel;
+        this.heading = angleDeg;
+        this.thrust = thrust;
+        this.isActive = true;
 
-        this.path = [{ x, y, vx: this.vx, vy: this.vy, time: 0 }];
+        this.path = [{ x, y }];
+        this.bbox = { minX: x, minY: y, maxX: x, maxY: y };
         this.radius = 0.5;
-
-        // Bounding box for auto-zoom optimization
-        this.bbox = { minX: x, maxX: x, minY: y, maxY: y };
+        this.isIdeal = false;
     }
 
     update(dt, gravity, airResistanceEnabled) {
-        if (this.useWasm) {
-            update_projectile(dt, gravity, airResistanceEnabled ? 1 : 0);
-            const nx = get_x();
-            const ny = get_y();
+        const safeDt = isFinite(dt) ? dt : 0.016;
+        this.physics.update(this.id, safeDt, gravity, airResistanceEnabled);
 
-            if (isNaN(nx) || isNaN(ny)) {
-                console.error("WASM returned NaN, falling back to JS physics");
-                this.useWasm = false;
-                this.jsPhysics = new JSPhysics(this.x, this.y, this.vx, this.vy); // Note: Simplified fallback init
-                this.jsPhysics.time = this.time;
-                // Continue with JS update in the same frame
-                this.jsPhysics.update(dt, gravity, airResistanceEnabled);
-                this.x = this.jsPhysics.x;
-                this.y = this.jsPhysics.y;
-                this.vx = this.jsPhysics.vx;
-                this.vy = this.jsPhysics.vy;
-                this.time = this.jsPhysics.time;
-            } else {
-                this.x = nx;
-                this.y = ny;
-                this.vx = get_vx();
-                this.vy = get_vy();
-                this.time = get_time();
-            }
-        } else {
-            this.jsPhysics.update(dt, gravity, airResistanceEnabled);
-            this.x = this.jsPhysics.x;
-            this.y = this.jsPhysics.y;
-            this.vx = this.jsPhysics.vx;
-            this.vy = this.jsPhysics.vy;
-            this.time = this.jsPhysics.time;
-        }
+        const newX = this.physics.getX(this.id);
+        const newY = this.physics.getY(this.id);
 
-        // Common path storage
-        if (this.time % 0.05 < dt) {
-            this.path.push({
-                x: this.x,
-                y: this.y,
-                vx: this.vx,
-                vy: this.vy,
-                time: this.time
-            });
+        // Sanitize - Never allow NaN to propagate to state
+        this.x = isFinite(newX) ? newX : this.x;
+        this.y = isFinite(newY) ? newY : this.y;
+        this.vx = isFinite(this.physics.getVX(this.id)) ? this.physics.getVX(this.id) : this.vx;
+        this.vy = isFinite(this.physics.getVY(this.id)) ? this.physics.getVY(this.id) : this.vy;
+        this.ax = isFinite(this.physics.getAX(this.id)) ? this.physics.getAX(this.id) : this.ax;
+        this.ay = isFinite(this.physics.getAY(this.id)) ? this.physics.getAY(this.id) : this.ay;
+        this.time = isFinite(this.physics.getTime(this.id)) ? this.physics.getTime(this.id) : this.time;
+
+        const rawFuel = this.physics.getFuel ? this.physics.getFuel(this.id) : 0;
+        this.fuel = isFinite(rawFuel) ? rawFuel : this.fuel;
+
+        const rawHeading = this.physics.getHeading ? this.physics.getHeading(this.id) : 0;
+        this.heading = isFinite(rawHeading) ? rawHeading : this.heading;
+
+        this.isActive = this.physics.isActive(this.id) === 1;
+
+        if (this.isActive && isFinite(this.x) && isFinite(this.y)) {
+            this.path.push({ x: this.x, y: this.y, ax: this.ax, ay: this.ay });
 
             // Update bbox
-            if (this.x > this.bbox.maxX) this.bbox.maxX = this.x;
-            if (this.y > this.bbox.maxY) this.bbox.maxY = this.y;
+            this.bbox.minX = Math.min(this.bbox.minX, this.x);
+            this.bbox.minY = Math.min(this.bbox.minY, this.y);
+            this.bbox.maxX = Math.max(this.bbox.maxX, this.x);
+            this.bbox.maxY = Math.max(this.bbox.maxY, this.y);
         }
     }
-}
 
-// Global function to initialize WASM from main.js or index.html
-window.initWasm = async function () {
-    console.log("WASM status: ", window.wasmReady ? "Ready" : "Waiting...");
-}
+    setHeading(angle) {
+        if (this.physics.setHeading) this.physics.setHeading(this.id, angle);
+        this.heading = angle;
+    }
 
-// Emscripten Module handshake is now handled in index.html
-if (window.wasmReady) {
-    console.log("WASM already ready in engine.js");
-} else {
-    window.onWasmReady = () => {
-        console.log("WASM became ready for engine.js");
-    };
+    setThrust(thrust) {
+        if (this.physics.setThrust) this.physics.setThrust(this.id, thrust);
+        this.thrust = thrust;
+    }
 }

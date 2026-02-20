@@ -184,46 +184,146 @@ export class Renderer {
         }
     }
 
-    drawAnalysis(projectile, showVectors) {
+    drawMissileHUD(projectile) {
+        const ctx = this.ctx;
+        const padding = 20;
+        const width = 150;
+        const height = 100;
+        const x = this.canvas.width - width - padding;
+        const y = padding;
+
+        // HUD Background
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+        ctx.strokeStyle = '#fb923c';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(x, y, width, height, 8);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = 'bold 10px Inter';
+        ctx.fillText('MISSILE COCKPIT', x + 10, y + 20);
+
+        // Fuel Gauge
+        const fuelPct = projectile.fuel / 10; // Assuming max fuel is 10 for display
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(x + 10, y + 35, width - 20, 10);
+        ctx.fillStyle = fuelPct > 0.2 ? '#fb923c' : '#ef4444';
+        ctx.fillRect(x + 10, y + 35, (width - 20) * Math.min(1, fuelPct), 10);
+        ctx.fillStyle = '#fff';
+        ctx.font = '8px Inter';
+        ctx.fillText(`FUEL: ${Math.round(projectile.fuel * 10)}%`, x + 12, y + 43);
+
+        // Compass / Heading
+        const cx = x + 40;
+        const cy = y + 75;
+        const r = 20;
+        ctx.strokeStyle = '#475569';
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.stroke();
+
+        const angleRad = projectile.heading * Math.PI / 180;
+        ctx.strokeStyle = '#fb923c';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(angleRad) * r, cy - Math.sin(angleRad) * r);
+        ctx.stroke();
+        ctx.lineWidth = 1;
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText(`HEADING: ${Math.round(projectile.heading)}°`, x + 70, y + 70);
+        ctx.fillText(`THRUST: ${projectile.thrust} m/s²`, x + 70, y + 85);
+    }
+
+    drawAnalysis(projectile, showVectors, showAcceleration = false) {
         if (!showVectors) return;
 
         const cx = this.toCanvasX(projectile.x);
         const cy = this.toCanvasY(projectile.y);
 
-        // Scale vectors for visualization (e.g., 1m/s = 2px)
-        const vecScale = 2;
+        // Scale vectors for visualization
+        const vScale = 2;
+        const aScale = 5; // Acceleration is usually smaller, scale it more
 
         // Total Velocity (Gold)
-        this.drawVector(cx, cy, projectile.vx * vecScale, projectile.vy * vecScale, '#eab308', 'v');
+        this.drawVector(cx, cy, projectile.vx * vScale, projectile.vy * vScale, '#eab308', 'v');
+
+        // Total Acceleration (Purple) if enabled
+        if (showAcceleration) {
+            this.drawVector(cx, cy, projectile.ax * aScale, projectile.ay * aScale, '#a855f7', 'a');
+        }
 
         // Components (Subtle)
-        this.drawVector(cx, cy, projectile.vx * vecScale, 0, '#38bdf8', 'vx');
-        this.drawVector(cx, cy, 0, projectile.vy * vecScale, '#ef4444', 'vy');
+        this.drawVector(cx, cy, projectile.vx * vScale, 0, '#38bdf8', 'vx');
+        this.drawVector(cx, cy, 0, projectile.vy * vScale, '#ef4444', 'vy');
     }
 
-    drawProjectile(projectile, showVectors = false) {
+    drawRelativeVelocity(p1, p2) {
+        if (!p1 || !p2) return;
+
+        const cx1 = this.toCanvasX(p1.x);
+        const cy1 = this.toCanvasY(p1.y);
+
+        // Relative Velocity Vector (v2 - v1)
+        const relVx = p2.vx - p1.vx;
+        const relVy = p2.vy - p1.vy;
+
+        const vScale = 2;
+        this.drawVector(cx1, cy1, relVx * vScale, relVy * vScale, '#22c55e', 'v_rel');
+    }
+
+    drawProjectile(projectile, showVectors = false, showAcceleration = false, label = "") {
         const ctx = this.ctx;
         const cx = this.toCanvasX(projectile.x);
         const cy = this.toCanvasY(projectile.y);
         const radiusPx = projectile.radius * this.scale > 3 ? projectile.radius * this.scale : 4;
 
-        // Draw Analysis if enabled
-        this.drawAnalysis(projectile, showVectors);
+        if (label === "Missile" && projectile.isActive) {
+            this.drawMissileHUD(projectile);
+        }
 
-        // Draw Trail using shared method
-        this.drawPath(projectile.path, '#38bdf8', 2);
+        // Draw Analysis if enabled
+        this.drawAnalysis(projectile, showVectors, showAcceleration);
+
+        // Draw Trail
+        this.drawPath(projectile.path, label === "Ideal" ? 'rgba(234, 179, 8, 0.3)' : '#38bdf8', 2, label === "Ideal");
+
+        // Thrust Effect
+        if (projectile.isActive && projectile.fuel > 0 && projectile.thrust > 0) {
+            const angleRad = projectile.heading * Math.PI / 180;
+            const tx = cx - Math.cos(angleRad) * radiusPx * 1.5;
+            const ty = cy + Math.sin(angleRad) * radiusPx * 1.5;
+
+            ctx.fillStyle = '#fb923c';
+            ctx.beginPath();
+            ctx.arc(tx, ty, radiusPx * (0.5 + Math.random() * 0.5), 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowColor = '#fb923c';
+            ctx.shadowBlur = 15;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
 
         // Draw Projectile Body
-        ctx.fillStyle = '#facc15';
+        ctx.fillStyle = label === "Missile" ? '#fb923c' : '#facc15';
         ctx.beginPath();
         ctx.arc(cx, cy, radiusPx, 0, Math.PI * 2);
         ctx.fill();
 
         // Glow effect
-        ctx.shadowColor = '#facc15';
+        ctx.shadowColor = ctx.fillStyle;
         ctx.shadowBlur = 10;
         ctx.fill();
-        ctx.shadowBlur = 0; // Reset
+        ctx.shadowBlur = 0;
+
+        if (label) {
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '10px Roboto';
+            ctx.fillText(label, cx + radiusPx + 2, cy - radiusPx - 2);
+        }
     }
 
     drawTarget(targetDist, targetWidth) {
