@@ -79,7 +79,7 @@ export class Renderer {
 
     follow(x, y, dt) {
         const parent = this.canvas.parentElement;
-        if (!parent) return;
+        if (!parent) return false;
         const rect = parent.getBoundingClientRect();
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
@@ -89,8 +89,18 @@ export class Renderer {
 
         // Smooth interpolation
         const lerpFactor = 5.0;
-        this.manualPanX += (targetPanX - this.manualPanX) * Math.min(1, dt * lerpFactor);
-        this.manualPanY += (targetPanY - this.manualPanY) * Math.min(1, dt * lerpFactor);
+        const diffX = targetPanX - this.manualPanX;
+        const diffY = targetPanY - this.manualPanY;
+
+        if (Math.abs(diffX) < 0.1 && Math.abs(diffY) < 0.1) {
+            this.manualPanX = targetPanX;
+            this.manualPanY = targetPanY;
+            return false;
+        }
+
+        this.manualPanX += diffX * Math.min(1, dt * lerpFactor);
+        this.manualPanY += diffY * Math.min(1, dt * lerpFactor);
+        return true;
     }
 
     resetView() {

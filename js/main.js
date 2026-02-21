@@ -25,6 +25,7 @@ let idealProjectile = null;
 let historyTrajectories = [];
 let animationId = null;
 let isSimulating = false;
+let isPanning = false;
 let lastTime = 0;
 
 // Parameters
@@ -81,6 +82,9 @@ async function initApp() {
         updateDisplays();
         drawFrame();
         renderer.drawGrid();
+
+        // Start animation loop to handle initial camera centering and transitions
+        animationId = requestAnimationFrame(loop);
 
         console.log("Physics Application Initialized Successfully.");
     } catch (error) {
@@ -216,7 +220,6 @@ function setupEventListeners() {
 function initPanning() {
     if (!renderer) return;
     const canvas = renderer.canvas;
-    let isPanning = false;
     let startX, startY;
 
     const onPanStart = (x, y) => {
@@ -338,6 +341,17 @@ function loop(timestamp) {
         if (dz) dz.textContent = Math.round(renderer.zoom * 100);
     }
 
+    const chkAutoZoom = document.getElementById('chk-auto-zoom');
+    let cameraMoving = false;
+    if (renderer && !isPanning) {
+        if (isSimulating && projectile && chkAutoZoom?.checked) {
+            cameraMoving = renderer.follow(projectile.x, projectile.y, cleanDt);
+        } else if (!isSimulating) {
+            // Auto-center on origin when idle to ensure preview is visible
+            cameraMoving = renderer.follow(0, 0, cleanDt);
+        }
+    }
+
     if (isSimulating && projectile) {
         handleInputs();
         const steps = 5;
@@ -370,6 +384,7 @@ function loop(timestamp) {
                 }
             }
         }
+        updateMemoryViews();
         updateEnergyDisplay(projectile);
         if (projectile.y > game.lastHeight) {
             game.lastHeight = projectile.y;
@@ -377,7 +392,6 @@ function loop(timestamp) {
             if (vh) vh.textContent = game.lastHeight.toFixed(2);
         }
 
-        const chkAutoZoom = document.getElementById('chk-auto-zoom');
         if (chkAutoZoom?.checked && renderer) {
             let { maxX, maxY } = projectile.bbox;
             maxX = Math.max(maxX, projectile.x + projectile.vx, 40);
@@ -390,7 +404,7 @@ function loop(timestamp) {
     }
 
     drawFrame();
-    if (isSimulating || zoomChanged) animationId = requestAnimationFrame(loop);
+    if (isSimulating || zoomChanged || cameraMoving) animationId = requestAnimationFrame(loop);
     else { animationId = null; lastTime = 0; }
 }
 
