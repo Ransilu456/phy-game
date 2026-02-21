@@ -139,10 +139,21 @@ export class GraphPlotter {
         ctx.strokeStyle = "#000000";
         ctx.strokeRect(paddingLeft - 1, paddingTop - 1, graphW + 2, graphH + 2);
 
-        // Title
+        // Labels
         ctx.fillStyle = '#000000';
-        ctx.font = 'bold 11px sans-serif';
-        ctx.fillText(title, paddingLeft, paddingTop - 8);
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillText(title, paddingLeft, paddingTop - 12);
+
+        ctx.save();
+        ctx.translate(10, paddingTop + graphH / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.textAlign = "center";
+        ctx.fillText("Velocity (m/s)", 0, 0);
+        ctx.restore();
+
+        ctx.textAlign = "center";
+        ctx.fillText("Time (s)", paddingLeft + graphW / 2, paddingTop + graphH + 25);
+        ctx.textAlign = "left";
 
         // Static Axes
         ctx.strokeStyle = '#000000';

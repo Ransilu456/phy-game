@@ -31,10 +31,36 @@
 
     <!-- Taskbar -->
     <div class="taskbar">
-        <div class="start-button">
+        <div class="start-button" onclick="toggleStartMenu()">
             <span style="font-size: 14px;">🏁</span>
             <span>Start</span>
         </div>
+
+        <!-- Start Menu Popup -->
+        <div id="start-menu" class="win-window hidden"
+            style="position: absolute; bottom: 30px; left: 2px; width: 160px; z-index: 2000;">
+            <div class="win-content" style="padding: 2px; background: #c0c0c0; display: flex; border: none;">
+                <div
+                    style="background: linear-gradient(to bottom, #000080, #1084d0); width: 25px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 5px;">
+                    <span
+                        style="color: white; transform: rotate(-90deg); font-weight: bold; white-space: nowrap; font-size: 14px; margin-bottom: 30px;">Physics95</span>
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; background: #c0c0c0;">
+                    <button class="win-btn"
+                        style="text-align: left; border: none; box-shadow: none; border-radius: 0; padding: 6px 10px; width: 100%; font-size: 11px;"
+                        onclick="location.reload()">🔄 Restart Lab</button>
+                    <button class="win-btn"
+                        style="text-align: left; border: none; box-shadow: none; border-radius: 0; padding: 6px 10px; width: 100%; font-size: 11px;"
+                        onclick="if(window.drawFrame) window.drawFrame()">🖼 Redraw View</button>
+                    <hr
+                        style="width: 100%; margin: 2px 0; border: none; border-top: 1px solid #808080; border-bottom: 1px solid #fff;">
+                    <button class="win-btn"
+                        style="text-align: left; border: none; box-shadow: none; border-radius: 0; padding: 6px 10px; width: 100%; color: #808080; font-size: 11px;"
+                        disabled>💻 Shut Down...</button>
+                </div>
+            </div>
+        </div>
+
         <div
             style="margin-left: 8px; border-left: 1px solid var(--win-dark-grey); border-right: 1px solid var(--win-white); height: 18px;">
         </div>
@@ -43,6 +69,18 @@
     </div>
 
     <script>
+        function toggleStartMenu() {
+            const menu = document.getElementById('start-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Close start menu when clicking elsewhere
+        window.onclick = function (e) {
+            if (!e.target.closest('.start-button') && !e.target.closest('#start-menu')) {
+                const menu = document.getElementById('start-menu');
+                if (menu) menu.classList.add('hidden');
+            }
+        };
         // Update taskbar time
         function updateTime() {
             const now = new Date();

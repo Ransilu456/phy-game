@@ -2,8 +2,10 @@ export class Game {
     constructor() {
         this.score = 0;
         this.targetDist = 0;
-        this.targetWidth = 2; // meters
+        this.targetBaseY = 0;
+        this.targetWidth = 3; // meters
         this.isActive = false;
+        this.challengeType = 'normal'; // 'normal', 'high_altitude', 'precision'
 
         // Stats
         this.lastRange = 0;
@@ -11,39 +13,68 @@ export class Game {
         this.lastTime = 0;
     }
 
-    startChallenge(minDist = 30, maxDist = 90) {
+    startChallenge() {
         this.isActive = true;
-        this.score = 0;
-        this.spawnTarget(minDist, maxDist);
-        return { targetDist: this.targetDist, score: this.score };
+
+        // Randomize challenge type
+        const types = ['normal', 'high_altitude', 'precision'];
+        this.challengeType = types[Math.floor(Math.random() * types.length)];
+
+        this.spawnTarget();
+        return {
+            targetDist: this.targetDist,
+            targetY: this.targetBaseY,
+            score: this.score,
+            description: this.getChallengeDescription()
+        };
     }
 
-    spawnTarget(minDist, maxDist) {
-        this.targetDist = Math.floor(Math.random() * (maxDist - minDist + 1)) + minDist;
+    spawnTarget() {
+        // Distance mostly between 30 and 120m
+        this.targetDist = Math.floor(Math.random() * 90) + 30;
+
+        if (this.challengeType === 'high_altitude') {
+            this.targetBaseY = Math.floor(Math.random() * 15) + 10;
+            this.targetWidth = 4;
+        } else if (this.challengeType === 'precision') {
+            this.targetBaseY = 0;
+            this.targetWidth = 1.5;
+        } else {
+            this.targetBaseY = 0;
+            this.targetWidth = 3;
+        }
+    }
+
+    getChallengeDescription() {
+        switch (this.challengeType) {
+            case 'high_altitude':
+                return `Intercept the target at ${this.targetBaseY}m altitude!`;
+            case 'precision':
+                return `Precision Strike! Hit the tiny ${this.targetWidth}m target at ${this.targetDist}m.`;
+            default:
+                return `Hit the target at ${this.targetDist}m.`;
+        }
     }
 
     checkCollision(projectile) {
-        // Simple ground collision check
-        if (projectile.y <= 0 && projectile.time > 0.1) {
-            // Check if hit target
-            const hit = Math.abs(projectile.x - this.targetDist) <= (this.targetWidth / 2);
-            return {
-                hit: hit,
-                ground: true
-            };
-        }
-        return { hit: false, ground: false };
+        // Collision with target area
+        const distToTarget = Math.sqrt(
+            Math.pow(projectile.x - this.targetDist, 2) +
+            Math.pow(projectile.y - this.targetBaseY, 2)
+        );
+
+        const hit = distToTarget <= (this.targetWidth / 2);
+
+        // Ground or out of bounds
+        const ground = (projectile.y <= 0 && projectile.time > 0.1) || (projectile.y < this.targetBaseY - 5);
+
+        return { hit, ground };
     }
 
     updateScore(hit) {
         if (hit) {
-            this.score += 10;
-            // Move target for next round if challenge mode is active
-            if (this.isActive) {
-                // Keep target for a moment or move immediately? 
-                // Let's keep it simple: hit -> score up -> new target
-                this.spawnTarget(20, 100);
-            }
+            this.score += (this.challengeType === 'precision' ? 20 : 10);
+            if (this.isActive) this.startChallenge(); // New target
         }
         return this.score;
     }

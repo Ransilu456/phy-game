@@ -107,6 +107,11 @@ li {
     padding: 3px 5px 1px 7px;
 }
 
+#start-menu button:hover {
+    background: var(--win-blue);
+    color: white;
+}
+
 .tray {
     margin-left: auto;
     border: 2px solid;

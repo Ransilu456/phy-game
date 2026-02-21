@@ -326,19 +326,23 @@ export class Renderer {
         }
     }
 
-    drawTarget(targetDist, targetWidth) {
+    drawTarget(targetDist, targetWidth, targetBaseY = 0) {
         const ctx = this.ctx;
         const x = this.toCanvasX(targetDist);
-        const y = this.toCanvasY(0);
+        const y = this.toCanvasY(targetBaseY);
         const widthPx = targetWidth * this.scale;
 
         ctx.fillStyle = '#ef4444';
-        ctx.fillRect(x - widthPx / 2, y, widthPx, 10);
+        ctx.fillRect(x - widthPx / 2, y - 5, widthPx, 10);
 
         // Target text
         ctx.fillStyle = '#ef4444';
         ctx.textAlign = 'center';
-        ctx.fillText("TARGET", x, y + 25);
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillText("TARGET", x, y + 15);
+        if (targetBaseY > 0) {
+            ctx.fillText(`${targetBaseY}m`, x, y + 25);
+        }
         ctx.textAlign = 'left'; // Reset
     }
 }

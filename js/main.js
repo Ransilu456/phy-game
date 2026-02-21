@@ -357,7 +357,7 @@ function loop(timestamp) {
                     if (sc) sc.textContent = game.score;
                     if (collision.hit) {
                         const td = document.getElementById('target-dist');
-                        if (td) td.textContent = game.targetDist + "m";
+                        if (td) td.textContent = game.targetDist + "m" + (game.targetBaseY > 0 ? ` @ ${game.targetBaseY}m` : '');
                         startChallenge();
                     }
                 }
@@ -409,7 +409,7 @@ function drawFrame() {
     if (!renderer) return;
     renderer.clear(); renderer.drawGrid();
     historyTrajectories.forEach(path => renderer.drawPath(path, '#334155', 1));
-    if (game.isActive) renderer.drawTarget(game.targetDist, game.targetWidth);
+    if (game.isActive) renderer.drawTarget(game.targetDist, game.targetWidth, game.targetBaseY);
     if (idealProjectile) renderer.drawProjectile(idealProjectile, false, false, "Ideal");
     if (projectile) {
         renderer.drawProjectile(projectile, showVectors, showAcceleration, missileMode ? "Missile" : "Ball");
@@ -421,13 +421,19 @@ function drawFrame() {
 }
 
 function startChallenge() {
-    game.startChallenge();
+    const data = game.startChallenge();
     const ci = document.getElementById('challenge-info');
     if (ci) ci.classList.remove('hidden');
+
     const sc = document.getElementById('score');
-    if (sc) sc.textContent = game.score;
+    if (sc) sc.textContent = data.score;
+
     const td = document.getElementById('target-dist');
-    if (td) td.textContent = game.targetDist + "m";
+    if (td) td.textContent = data.targetDist + "m" + (data.targetY > 0 ? ` @ ${data.targetY}m` : '');
+
+    const desc = document.getElementById('challenge-desc');
+    if (desc) desc.textContent = data.description;
+
     resetSimulation();
 }
 

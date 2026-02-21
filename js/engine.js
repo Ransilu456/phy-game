@@ -180,7 +180,15 @@ export class Projectile {
         this.isActive = this.physics.isActive(this.id) === 1;
 
         if (this.isActive && isFinite(this.x) && isFinite(this.y)) {
-            this.path.push({ x: this.x, y: this.y, ax: this.ax, ay: this.ay });
+            this.path.push({
+                x: this.x,
+                y: this.y,
+                vx: this.vx,
+                vy: this.vy,
+                time: this.time,
+                ax: this.ax,
+                ay: this.ay
+            });
 
             // Update bbox
             this.bbox.minX = Math.min(this.bbox.minX, this.x);
