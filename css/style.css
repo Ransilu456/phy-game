@@ -357,11 +357,12 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 /* Responsive Overrides */
-@media (max-width: 1200px) {
-    #controls-panel-container {
-        grid-column: span 12;
+@media (max-width: 1024px) {
+    #side-layout {
+        grid-template-columns: 1fr;
     }
 
+    #controls-panel-container,
     #learning-hub-container {
         grid-column: span 12;
     }
@@ -372,8 +373,16 @@ input[type="range"]::-webkit-slider-thumb {
         padding: 4px;
     }
 
-    .lg-hidden {
-        display: block;
+    .win-grid {
+        gap: 6px;
+    }
+
+    .win-window {
+        min-width: 0;
+    }
+
+    .win-title-bar {
+        font-size: 10px;
     }
 }
 

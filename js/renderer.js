@@ -361,4 +361,22 @@ export class Renderer {
         }
         ctx.textAlign = 'left'; // Reset
     }
-}
+
+    drawGhostProjectile(x, y, radius, type) {
+        const cx = this.toCanvasX(x);
+        const cy = this.toCanvasY(y);
+        const radiusPx = radius * this.scale > 3 ? radius * this.scale : 4;
+
+        this.ctx.save();
+        this.ctx.globalAlpha = 0.3;
+        this.ctx.fillStyle = type === "Missile" ? '#fb923c' : '#facc15';
+        this.ctx.beginPath();
+        this.ctx.arc(cx, cy, radiusPx, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        this.ctx.strokeStyle = this.ctx.fillStyle;
+        this.ctx.setLineDash([2, 2]);
+        this.ctx.stroke();
+        this.ctx.restore();
+    }
+}   

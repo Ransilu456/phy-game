@@ -71,6 +71,13 @@ async function initApp() {
 
         // 5. Initial Render
         window.drawFrame = drawFrame;
+
+        // Reset labels to (0,0,0)
+        ['val-range', 'val-height', 'val-time'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = "0.00";
+        });
+
         updateDisplays();
         drawFrame();
         renderer.drawGrid();
@@ -411,12 +418,16 @@ function drawFrame() {
     historyTrajectories.forEach(path => renderer.drawPath(path, '#334155', 1));
     if (game.isActive) renderer.drawTarget(game.targetDist, game.targetWidth, game.targetBaseY);
     if (idealProjectile) renderer.drawProjectile(idealProjectile, false, false, "Ideal");
+
     if (projectile) {
         renderer.drawProjectile(projectile, showVectors, showAcceleration, missileMode ? "Missile" : "Ball");
         const vr = document.getElementById('val-range');
         if (vr) vr.textContent = projectile.x.toFixed(2);
         const vt = document.getElementById('val-time');
         if (vt) vt.textContent = projectile.time.toFixed(2);
+    } else {
+        // Show Ghost Projectile at Origin if no simulation active
+        renderer.drawGhostProjectile(0, 0, 0.5, missileMode ? "Missile" : "Ball");
     }
 }
 
