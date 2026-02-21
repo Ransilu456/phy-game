@@ -1,426 +1,66 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projectile Physics Engine (A/L Sri Lanka)</title>
-
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,700;1,400&family=EB+Garamond:ital,wght@1,400;1,700&display=swap"
-        rel="stylesheet">
-
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Roboto', 'sans-serif'],
-                        math: ['EB Garamond', 'serif'],
-                    },
-                    colors: {
-                        brand: {
-                            bg: 'var(--brand-bg)',
-                            panel: '#1e293b',
-                            accent: 'var(--brand-accent)',
-                            'accent-hover': 'var(--brand-accent-hover)',
-                            border: 'var(--brand-border)',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        :root {
-            --brand-bg: #0f172a;
-            --brand-accent: #38bdf8;
-            --brand-accent-hover: #0ea5e9;
-            --brand-border: #334155;
-        }
-
-        .missile-alert:root {
-            --brand-bg: #1a0f0f;
-            --brand-accent: #fb923c;
-            --brand-accent-hover: #f97316;
-            --brand-border: #451a1a;
-        }
-
-        body {
-            font-family: 'Roboto', sans-serif;
-            /* Kept original font-family from Tailwind config */
-            background-color: var(--brand-bg);
-            transition: background-color 0.5s ease;
-        }
-    </style>
-
+    <title>Projectile Physics Engine - Windows 95</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body class="bg-brand-bg text-slate-50 font-sans h-screen flex flex-col md:overflow-hidden text-[0.9rem]">
-    <div
-        class="max-w-[1400px] mx-auto w-full h-full flex flex-col p-2 md:p-4 gap-2 md:gap-4 overflow-y-auto md:overflow-hidden">
-        <header class="text-center pb-2 border-b border-brand-border flex justify-between items-center sm:block">
-            <div class="text-left sm:text-center">
-                <h1 class="text-xl md:text-3xl font-bold text-brand-accent tracking-tight">Projectile Motion</h1>
-                <p class="text-slate-400 text-[0.6rem] md:text-sm uppercase tracking-widest mt-1">A/L Physics - Sri
-                    Lanka</p>
-            </div>
-            <!-- Mobile Controls Toggle -->
-            <button id="btn-mobile-controls"
-                class="lg:hidden bg-brand-panel border border-brand-border px-4 py-2 rounded-lg text-sm font-bold text-brand-accent active:scale-95 transition-transform">
-                Controls
-            </button>
-        </header>
+<body>
+    <div class="desktop">
+        <!-- Application Grid Structure -->
+        <div class="win-grid">
 
-        <main class="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 relative">
-            <!-- Left Column: Simulation & Graphs -->
-            <div class="flex-[3] flex flex-col gap-2 md:gap-4 min-h-0">
-                <!-- Simulation Area -->
-                <div
-                    class="h-[350px] md:h-auto md:flex-[2] bg-black rounded-xl border border-brand-border relative overflow-hidden shadow-2xl shadow-sky-900/10">
-                    <canvas id="gameCanvas" class="w-full h-full block"></canvas>
+            <!-- Header (Full Width Row) -->
+            <div id="header-container" style="grid-column: span 12;"></div>
 
-                    <!-- Overlay Stats -->
-                    <div class="absolute top-2 left-2 md:top-4 md:left-4 bg-brand-panel/80 backdrop-blur-md p-2 md:p-4 rounded-lg border border-brand-border font-mono text-[0.65rem] md:text-sm pointer-events-none shadow-lg"
-                        id="statsDisplay">
-                        <div class="mb-1">Range (R): <span id="val-range"
-                                class="text-brand-accent font-bold">0.00</span>
-                            m
-                        </div>
-                        <div class="mb-1">Max Height (H): <span id="val-height"
-                                class="text-brand-accent font-bold">0.00</span> m</div>
-                        <div>Time (T): <span id="val-time" class="text-brand-accent font-bold">0.00</span> s</div>
-                    </div>
-                </div>
+            <!-- Simulation (Main Viewport) -->
+            <div id="simulation-container" style="grid-column: span 12;"></div>
 
-                <!-- Graphs Section (Preview Area) -->
-                <div
-                    class="h-[200px] md:flex-1 bg-brand-panel rounded-xl border border-brand-border p-3 md:p-4 shadow-inner min-h-[160px]">
-                    <h3 class="text-[0.6rem] md:text-xs uppercase tracking-widest text-slate-500 mb-2 font-bold">Physics
-                        Preview (Graphs)
-                    </h3>
-                    <canvas id="graphCanvas" class="w-full h-full"></canvas>
-                </div>
+            <!-- Bottom Row: Controls & Hub -->
+            <div id="side-layout"
+                style="grid-column: span 12; display: grid; grid-template-columns: repeat(12, 1fr); gap: 8px;">
+                <div id="controls-panel-container" style="grid-column: span 4;"></div>
+                <div id="learning-hub-container" style="grid-column: span 8;"></div>
             </div>
 
-            <!-- Controls Panel (Aside) -->
-            <aside id="controls-panel"
-                class="fixed lg:static inset-0 z-50 transform translate-x-full lg:translate-x-0 transition-transform duration-300 lg:flex-1 bg-brand-panel p-5 rounded-xl border-l lg:border border-brand-border overflow-y-auto flex flex-col gap-6 shadow-xl min-w-[320px]">
+        </div>
+    </div>
 
-                <!-- Mobile Back Button -->
-                <div class="lg:hidden flex justify-between items-center mb-4 pb-2 border-b border-brand-border">
-                    <h2 class="text-lg font-bold text-brand-accent">Simulation Controls</h2>
-                    <button id="btn-close-controls" class="p-2 text-slate-400 hover:text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
+    <!-- Taskbar -->
+    <div class="taskbar">
+        <div class="start-button">
+            <span style="font-size: 14px;">🏁</span>
+            <span>Start</span>
+        </div>
+        <div
+            style="margin-left: 8px; border-left: 1px solid var(--win-dark-grey); border-right: 1px solid var(--win-white); height: 18px;">
+        </div>
 
-                <!-- Parameters -->
-                <section class="space-y-4">
-                    <h3
-                        class="text-brand-accent font-bold border-b border-brand-border pb-2 text-sm uppercase tracking-wider">
-                        Parameters</h3>
-                    <div class="space-y-3">
-                        <label class="block text-sm">
-                            <div class="flex justify-between mb-1 text-slate-300">
-                                <span>Initial Velocity (u)</span>
-                                <span class="text-brand-accent font-bold"><span id="disp-velocity">20</span> m/s</span>
-                            </div>
-                            <input type="range" id="inp-velocity" min="0" max="100" step="0.1" value="20"
-                                class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-brand-accent">
-                        </label>
-                        </label>
-                        <label class="block text-sm">
-                            <div class="flex justify-between mb-1 text-slate-300">
-                                <span>Launch Angle (θ)</span>
-                                <span class="text-brand-accent font-bold"><span id="disp-angle">45</span>°</span>
-                            </div>
-                            <input type="range" id="inp-angle" min="0" max="90" step="1" value="45"
-                                class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-brand-accent">
-                        </label>
-
-                        <!-- Missile System (New) -->
-                        <div id="missile-controls" class="pt-2 border-t border-brand-border/30 space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs uppercase font-bold text-slate-400">Missile Mode</span>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="chk-missile-mode" class="sr-only peer">
-                                    <div
-                                        class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500">
-                                    </div>
-                                </label>
-                            </div>
-                            <div id="missile-params" class="hidden space-y-2">
-                                <label class="block text-xs">
-                                    <div class="flex justify-between mb-1">
-                                        <span>Engine Thrust (a)</span>
-                                        <span class="text-orange-400 font-bold"><span id="disp-thrust">0</span>
-                                            m/s²</span>
-                                    </div>
-                                    <input type="range" id="inp-thrust" min="0" max="50" step="1" value="0"
-                                        class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500">
-                                </label>
-                                <label class="block text-xs">
-                                    <div class="flex justify-between mb-1">
-                                        <span>Fuel Duration (t_f)</span>
-                                        <span class="text-orange-400 font-bold"><span id="disp-fuel">0</span> s</span>
-                                    </div>
-                                    <input type="range" id="inp-fuel" min="0" max="10" step="0.1" value="0"
-                                        class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500">
-                                </label>
-                            </div>
-                        </div>
-
-                        <label class="block text-sm">
-                            <div class="flex justify-between mb-1 text-slate-300">
-                                <span>Gravity (g)</span>
-                                <span class="text-brand-accent font-bold"><span id="disp-gravity">9.81</span>
-                                    m/s²</span>
-                            </div>
-                            <div class="flex flex-col sm:flex-row gap-2">
-                                <input type="number" id="inp-gravity" value="9.81" step="0.01"
-                                    class="bg-brand-bg border border-brand-border text-slate-100 p-2 rounded w-full focus:outline-none focus:ring-1 focus:ring-brand-accent transition-all text-sm">
-                                <select id="sel-planet"
-                                    class="bg-brand-bg border border-brand-border text-slate-100 p-2 rounded w-full focus:outline-none focus:ring-1 focus:ring-brand-accent transition-all text-sm">
-                                    <option value="9.81">Earth (9.81)</option>
-                                    <option value="1.62">Moon (1.62)</option>
-                                    <option value="3.71">Mars (3.71)</option>
-                                    <option value="24.79">Jupiter (24.79)</option>
-                                </select>
-                            </div>
-                        </label>
-                    </div>
-                </section>
-
-                <!-- Environment & Navigation -->
-                <div class="grid grid-cols-1 gap-6">
-                    <section class="space-y-3">
-                        <h3
-                            class="text-brand-accent font-bold border-b border-brand-border pb-1 text-sm uppercase tracking-wider">
-                            Environment</h3>
-                        <label class="flex items-center gap-3 cursor-pointer group select-none">
-                            <input type="checkbox" id="chk-air-resistance"
-                                class="w-5 h-5 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg cursor-pointer">
-                            <span class="text-sm group-hover:text-brand-accent transition-colors">Apply Air
-                                Resistance</span>
-                        </label>
-                    </section>
-
-                    <section class="space-y-3">
-                        <h3
-                            class="text-brand-accent font-bold border-b border-brand-border pb-1 text-sm uppercase tracking-wider">
-                            Relative Velocity</h3>
-                        <div class="space-y-2">
-                            <label class="flex items-center gap-3 cursor-pointer group select-none">
-                                <input type="checkbox" id="chk-rel-vel"
-                                    class="w-5 h-5 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg cursor-pointer">
-                                <span class="text-sm group-hover:text-brand-accent transition-colors">Show Relative
-                                    Vectors</span>
-                            </label>
-                            <div id="rel-vel-hud"
-                                class="hidden p-2 bg-brand-bg/40 rounded border border-brand-border/30 text-[0.7rem] font-mono">
-                                <div class="flex justify-between text-emerald-400">
-                                    <span>V_rel:</span>
-                                    <span id="val-rel-v">0.00 m/s</span>
-                                </div>
-                                <div class="text-slate-500 text-[0.6rem] mt-1 italic">Relative to previous launch</div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <section class="space-y-3">
-                        <h3
-                            class="text-brand-accent font-bold border-b border-brand-border pb-1 text-sm uppercase tracking-wider">
-                            Zoom & View</h3>
-                        <label class="flex items-center gap-3 cursor-pointer group select-none">
-                            <input type="checkbox" id="chk-auto-zoom" checked
-                                class="w-5 h-5 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg cursor-pointer">
-                            <span class="text-sm group-hover:text-brand-accent transition-colors">Smart Auto-Zoom</span>
-                        </label>
-                        <label class="block text-sm">
-                            <div class="flex justify-between mb-1 text-slate-300">
-                                <span>Viewport Zoom</span>
-                                <span class="text-brand-accent font-bold"><span id="disp-zoom">100</span>%</span>
-                            </div>
-                            <input type="range" id="inp-zoom" min="0.1" max="5" step="0.1" value="1"
-                                class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-brand-accent">
-                        </label>
-                        <button id="btn-zoom-reset"
-                            class="bg-slate-700 hover:bg-slate-600 text-slate-200 py-2 px-4 rounded text-xs transition-all w-full font-bold">Reset
-                            Viewport</button>
-                    </section>
-                </div>
-
-                <!-- Main Actions -->
-                <section class="flex gap-2 pt-2 border-t border-brand-border mt-auto">
-                    <button id="btn-fire"
-                        class="flex-[2] bg-brand-accent hover:bg-brand-accent-hover text-brand-bg py-3 rounded-lg font-bold text-lg transition-transform active:scale-95 shadow-lg shadow-sky-500/20 uppercase tracking-widest">Fire</button>
-                    <button id="btn-reset"
-                        class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-lg font-bold transition-all transition-transform active:scale-95 uppercase tracking-wider">Reset</button>
-                </section>
-
-                <!-- Learning Hub -->
-                <section
-                    class="bg-sky-500/5 border border-sky-500/20 rounded-xl overflow-hidden shadow-inner flex flex-col min-h-0">
-                    <div class="flex justify-between items-center bg-sky-500/10 p-3 flex-shrink-0">
-                        <h3 class="text-brand-accent font-bold text-[0.65rem] uppercase tracking-widest">Learning Hub
-                        </h3>
-                        <button id="btn-toggle-hub"
-                            class="text-[0.65rem] bg-sky-500/20 hover:bg-sky-500/40 px-3 py-1 rounded transition-colors uppercase font-bold tracking-tighter">Expand</button>
-                    </div>
-                    <div id="hub-content" class="hidden p-4 space-y-4 overflow-y-auto">
-                        <!-- Tools -->
-                        <div class="space-y-4">
-                            <h4 class="text-[0.65rem] uppercase tracking-widest text-slate-500 font-bold mb-1">Visual
-                                Analysis</h4>
-                            <label class="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" id="chk-show-vectors"
-                                    class="w-5 h-5 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg cursor-pointer">
-                                <span class="text-sm">Velocity Vectors (v, vx, vy)</span>
-                            </label>
-                            <label class="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" id="chk-show-accel"
-                                    class="w-5 h-5 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg cursor-pointer">
-                                <span class="text-sm">Acceleration Vector (a)</span>
-                            </label>
-
-                            <!-- Mission Briefing (New) -->
-                            <div class="mt-4 pt-4 border-t border-brand-border/30">
-                                <h4 class="text-[0.65rem] uppercase tracking-widest text-orange-500 font-bold mb-2">
-                                    Missile Mission Briefing</h4>
-                                <ul class="text-[0.75rem] text-slate-400 space-y-2">
-                                    <li class="flex gap-2">
-                                        <span
-                                            class="text-orange-400 font-bold text-[0.6rem] bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20">SPACE</span>
-                                        <span>Apply Engine Thrust</span>
-                                    </li>
-                                    <li class="flex gap-2">
-                                        <span
-                                            class="text-orange-400 font-bold text-[0.6rem] bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20">←
-                                            / →</span>
-                                        <span>Steer Missile (Heading)</span>
-                                    </li>
-                                    <li class="italic text-[0.65rem] text-slate-500 mt-2">
-                                        Tip: Conserve fuel! High-speed long-distance hits earn more points in challenge
-                                        mode.
-                                    </li>
-                                </ul>
-                            </div>
-                            <label class="flex items-center gap-3 cursor-pointer group">
-                                <label class="flex items-center gap-3 cursor-pointer group">
-                                    <input type="checkbox" id="chk-show-ideal"
-                                        class="w-5 h-5 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg cursor-pointer">
-                                    <span class="text-sm">Compare with Ideal Path</span>
-                                </label>
-                                <label class="flex items-center gap-3 cursor-pointer group">
-                                    <input type="checkbox" id="chk-keep-history"
-                                        class="w-5 h-5 rounded border-brand-border text-brand-accent focus:ring-brand-accent bg-brand-bg cursor-pointer">
-                                    <span class="text-sm">Show Trajectory History</span>
-                                </label>
-                        </div>
-
-                        <!-- Energy Dashboard -->
-                        <div class="space-y-3 pt-2 border-t border-brand-border">
-                            <h4 class="text-[0.65rem] uppercase tracking-widest text-slate-500 font-bold">Energy
-                                Conservation (J/kg)</h4>
-                            <div class="space-y-2 text-[0.7rem] uppercase font-mono">
-                                <div class="flex justify-between mb-1"><span>Kinetic (KE)</span><span
-                                        id="val-ke">0.0</span></div>
-                                <div class="w-full bg-slate-800 h-1.5 rounded-full">
-                                    <div id="bar-ke" class="bg-brand-accent h-full transition-all duration-75"
-                                        style="width: 0%"></div>
-                                </div>
-
-                                <div class="flex justify-between mb-1"><span>Potential (PE)</span><span
-                                        id="val-pe">0.0</span></div>
-                                <div class="w-full bg-slate-800 h-1.5 rounded-full">
-                                    <div id="bar-pe" class="bg-red-500 h-full transition-all duration-75"
-                                        style="width: 0%"></div>
-                                </div>
-
-                                <div class="flex justify-between mb-1 pt-1 border-t border-brand-border/30"><span>Total
-                                        Energy</span><span id="val-te">0.0</span></div>
-                            </div>
-                        </div>
-
-                        <!-- Formulas -->
-                        <div
-                            class="formula-box bg-brand-bg/60 p-4 rounded-lg border border-sky-500/10 font-math italic text-lg leading-relaxed shadow-lg overflow-x-auto text-center">
-                            <p class="mb-3 hover:text-brand-accent transition-colors"><strong
-                                    class="not-italic font-sans text-[0.7rem] block text-brand-accent uppercase tracking-widest mb-1">Range
-                                    (R)</strong> (u² sin 2θ) / g</p>
-                            <p class="mb-3 hover:text-brand-accent transition-colors"><strong
-                                    class="not-italic font-sans text-[0.7rem] block text-brand-accent uppercase tracking-widest mb-1">Max
-                                    Height (H)</strong> (u² sin² θ) / 2g</p>
-                            <p class="hover:text-brand-accent transition-colors"><strong
-                                    class="not-italic font-sans text-[0.7rem] block text-brand-accent uppercase tracking-widest mb-1">Flight
-                                    Time (T)</strong> (2u sin θ) / g</p>
-                        </div>
-
-                        <!-- Pre-sets -->
-                        <div class="pt-2 border-t border-brand-border">
-                            <h4 class="text-[0.65rem] uppercase tracking-widest text-slate-500 font-bold mb-2">
-                                Experimental Labs</h4>
-                            <select id="sel-preset"
-                                class="bg-brand-bg border border-brand-border text-slate-100 p-2 rounded text-xs w-full focus:ring-1 focus:ring-brand-accent">
-                                <option value="">--- Load Preset ---</option>
-                                <option value="max-range">Maximum Range (45°)</option>
-                                <option value="moon-jump">Moon Gravity Lab</option>
-                                <option value="air-drag-test">High Drag Experiment</option>
-                                <option value="zero-g">Zero-G Linear Motion</option>
-                            </select>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Challenge Mode -->
-                <section class="space-y-3">
-                    <button id="btn-challenge-start"
-                        class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold shadow-lg shadow-emerald-900/20 transition-all uppercase tracking-wider">Target
-                        Practice</button>
-                    <div id="challenge-info"
-                        class="hidden grid grid-cols-2 gap-3 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg text-sm text-center">
-                        <div class="bg-brand-bg/40 p-2 rounded">
-                            <span class="block text-[0.6rem] text-slate-400 uppercase tracking-widest">Score</span>
-                            <span id="score" class="text-xl font-bold text-emerald-400 leading-none">0</span>
-                        </div>
-                        <div class="bg-brand-bg/40 p-2 rounded">
-                            <span class="block text-[0.6rem] text-slate-400 uppercase tracking-widest">Dist</span>
-                            <span id="target-dist" class="text-xl font-bold text-emerald-400 leading-none">---</span>
-                        </div>
-                    </div>
-                </section>
-            </aside>
-        </main>
-
-
-        <footer class="text-center pb-2">
-            <p class="text-xs text-slate-500">Built for A/L Physical Science Students • Sri Lanka</p>
-        </footer>
+        <div class="tray" id="taskbar-time">12:00 PM</div>
     </div>
 
     <script>
-        // Define Module before loading the Emscripten glue code
+        // Update taskbar time
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('taskbar-time').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
         window.Module = {
             onRuntimeInitialized: function () {
-                console.log("WASM Runtime Initialized via index.html");
+                console.log("WASM Runtime Initialized");
                 window.wasmReady = true;
                 if (window.onWasmReady) window.onWasmReady();
             }
         };
     </script>
     <script src="js/physics.js"></script>
-    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/main.js?v=95-final-v2"></script>
 </body>
 
 </html>

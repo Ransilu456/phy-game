@@ -1,0 +1,101 @@
+<div class="win-window" id="controls-panel">
+    <div class="win-title-bar">
+        <div class="win-title">
+            <span>🛠 Properties</span>
+        </div>
+        <div class="win-title-controls">
+            <button class="win-control-btn" id="btn-close-controls">×</button>
+        </div>
+    </div>
+    <div class="win-content">
+        <div class="win-panel" style="margin-bottom: 10px;">
+            <div style="font-weight: bold; font-size: 11px; margin-bottom: 6px;">Launch Parameters</div>
+
+            <div class="win-field-group">
+                <div class="win-row" style="justify-content: space-between;">
+                    <span class="win-label">Initial Velocity (u)</span>
+                    <span id="disp-velocity" style="font-family: monospace;">20</span>
+                </div>
+                <input type="range" id="inp-velocity" min="0" max="100" step="1" value="20">
+            </div>
+
+            <div class="win-field-group">
+                <div class="win-row" style="justify-content: space-between;">
+                    <span class="win-label">Launch Angle (θ)</span>
+                    <span id="disp-angle" style="font-family: monospace;">45</span>
+                </div>
+                <input type="range" id="inp-angle" min="0" max="90" step="1" value="45">
+            </div>
+
+            <div class="win-field-group">
+                <div class="win-row" style="justify-content: space-between;">
+                    <span class="win-label">Gravity (g)</span>
+                    <span id="disp-gravity" style="font-family: monospace;">9.81</span>
+                </div>
+                <input type="range" id="inp-gravity" min="0" max="30" step="0.1" value="9.81">
+                <select id="sel-planet" class="win-select" style="margin-top: 4px;">
+                    <option value="9.81">🌍 Earth (9.81)</option>
+                    <option value="1.62">🌙 Moon (1.62)</option>
+                    <option value="3.71">🔴 Mars (3.71)</option>
+                    <option value="24.79">🪐 Jupiter (24.79)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="win-panel" style="margin-bottom: 10px;">
+            <div class="win-checkbox-group">
+                <input type="checkbox" id="chk-air-resistance">
+                <span class="win-label">Enable Air Resistance</span>
+            </div>
+
+            <div class="win-checkbox-group">
+                <input type="checkbox" id="chk-missile-mode">
+                <span class="win-label">Enable Missile Engine</span>
+            </div>
+
+            <div id="missile-params" class="hidden"
+                style="margin-top: 5px; border-top: 1px dotted #808080; padding-top: 5px;">
+                <div class="win-field-group">
+                    <div class="win-row" style="justify-content: space-between;">
+                        <span class="win-label">Engine Thrust</span>
+                        <span id="disp-thrust" style="font-family: monospace;">20</span>
+                    </div>
+                    <input type="range" id="inp-thrust" min="0" max="50" value="20">
+                </div>
+                <div class="win-field-group">
+                    <div class="win-row" style="justify-content: space-between;">
+                        <span class="win-label">Fuel Capacity</span>
+                        <span id="disp-fuel" style="font-family: monospace;">10</span>
+                    </div>
+                    <input type="range" id="inp-fuel" min="1" max="20" value="10">
+                </div>
+                <p style="font-size: 9px; color: #444;">* Use WASD/Arrows to steer, Space for boost</p>
+            </div>
+        </div>
+
+        <div class="win-panel" style="margin-bottom: 10px;">
+            <div style="font-weight: bold; font-size: 11px; margin-bottom: 4px;">Visualizations</div>
+            <div class="win-checkbox-group">
+                <input type="checkbox" id="chk-show-vectors">
+                <span class="win-label">Show Velocity Vectors</span>
+            </div>
+            <div class="win-checkbox-group">
+                <input type="checkbox" id="chk-show-accel">
+                <span class="win-label">Show Accel Vectors</span>
+            </div>
+            <div class="win-checkbox-group">
+                <input type="checkbox" id="chk-keep-history" checked>
+                <span class="win-label">Show Previous Paths</span>
+            </div>
+        </div>
+
+        <div class="win-row" style="gap: 5px;">
+            <button id="btn-fire" class="win-btn"
+                style="flex: 2; font-weight: bold; background: #000080; color: white;">🚀 FIRE</button>
+            <button id="btn-reset" class="win-btn" style="flex: 1;">RESET</button>
+        </div>
+
+        <button id="btn-challenge-start" class="win-btn"
+            style="width: 100%; margin-top: 5px; background: #ef4444; color: white;">🎯 ENTER CHALLENGE</button>
+    </div>
+</div>

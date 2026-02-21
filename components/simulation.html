@@ -1,0 +1,44 @@
+<div class="win-window" style="height: 400px; display: flex; flex-direction: column;">
+    <div class="win-title-bar">
+        <div class="win-title">
+            <span>📺 Viewport.exe</span>
+        </div>
+        <div class="win-title-controls">
+            <button class="win-control-btn">_</button>
+            <button class="win-control-btn">□</button>
+            <button class="win-control-btn">×</button>
+        </div>
+    </div>
+    <div class="win-content"
+        style="padding: 0; position: relative; background: #000; display: flex; flex-direction: column; overflow: hidden;">
+        <!-- Simulation Canvas -->
+        <div style="flex: 1; position: relative;">
+            <canvas id="gameCanvas" style="width: 100%; height: 100%; cursor: crosshair; display: block;"></canvas>
+
+            <!-- In-sim stats -->
+            <div style="position: absolute; top: 10px; left: 10px; pointer-events: none;">
+                <div class="win-panel"
+                    style="background: rgba(192,192,192,0.9); padding: 5px; font-size: 11px; min-width: 100px;">
+                    <div style="border-bottom: 1px solid #808080; margin-bottom: 3px; font-weight: bold;">LIVE STATS
+                    </div>
+                    <div class="win-row" style="justify-content: space-between;"><span>Range:</span><span
+                            id="val-range">0.00</span>m</div>
+                    <div class="win-row" style="justify-content: space-between;"><span>Height:</span><span
+                            id="val-height">0.00</span>m</div>
+                    <div class="win-row" style="justify-content: space-between;"><span>Time:</span><span
+                            id="val-time">0.00</span>s</div>
+                </div>
+            </div>
+
+            <!-- Challenge Overlay -->
+            <div id="challenge-info" class="hidden"
+                style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);">
+                <div class="win-panel" style="text-align: center; border-color: red;">
+                    <div style="color: red; font-weight: bold;">🎯 CHALLENGE ACTIVE</div>
+                    <div style="font-size: 11px;">Target: <span id="target-dist">200m</span> | Score: <span
+                            id="score">0</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,90 +1,28 @@
 import { Projectile, wrapWasmFunctions } from './engine.js';
+import { Renderer } from './renderer.js';
+import { Game } from './game.js';
+import { GraphPlotter } from './graphs.js';
+import { ComponentLoader } from './ui.js';
+import { ThemeManager } from './themes.js';
 
 // WASM Initialization
 window.onWasmReady = () => {
     console.log("Initializing WASM Physics Bridge...");
-    window.wasmPhysics = wrapWasmFunctions(window.Module);
+    if (window.Module) {
+        window.wasmPhysics = wrapWasmFunctions(window.Module);
+    }
 };
 
-// If WASM already loaded (e.g. from cache)
 if (window.wasmReady) {
     window.onWasmReady();
 }
-import { Renderer } from './renderer.js';
-import { Game } from './game.js';
-import { GraphPlotter } from './graphs.js';
 
-// DOM Elements
-const canvas = document.getElementById('gameCanvas');
-const graphCanvas = document.getElementById('graphCanvas');
-const btnFire = document.getElementById('btn-fire');
-const btnReset = document.getElementById('btn-reset');
-const btnChallenge = document.getElementById('btn-challenge-start');
-const btnMobileControls = document.getElementById('btn-mobile-controls');
-const btnCloseControls = document.getElementById('btn-close-controls');
-const controlsPanel = document.getElementById('controls-panel');
-
-// Inputs
-const inpVelocity = document.getElementById('inp-velocity');
-const inpAngle = document.getElementById('inp-angle');
-const inpGravity = document.getElementById('inp-gravity');
-const chkAirRes = document.getElementById('chk-air-resistance');
-const selPlanet = document.getElementById('sel-planet');
-
-const chkMissileMode = document.getElementById('chk-missile-mode');
-const missileParams = document.getElementById('missile-params');
-const inpThrust = document.getElementById('inp-thrust');
-const inpFuel = document.getElementById('inp-fuel');
-const dispThrust = document.getElementById('disp-thrust');
-const dispFuel = document.getElementById('disp-fuel');
-
-const chkRelVel = document.getElementById('chk-rel-vel');
-const relVelHud = document.getElementById('rel-vel-hud');
-const valRelV = document.getElementById('val-rel-v');
-
-const chkShowAccel = document.getElementById('chk-show-accel');
-
-// Displays
-const dispVelocity = document.getElementById('disp-velocity');
-const dispAngle = document.getElementById('disp-angle');
-const dispGravity = document.getElementById('disp-gravity');
-const dispZoom = document.getElementById('disp-zoom');
-
-const valRange = document.getElementById('val-range');
-const valHeight = document.getElementById('val-height');
-const valTime = document.getElementById('val-time');
-
-const challengeInfo = document.getElementById('challenge-info');
-const scoreDisp = document.getElementById('score');
-const targetDistDisp = document.getElementById('target-dist');
-
-const inpZoom = document.getElementById('inp-zoom');
-const btnZoomReset = document.getElementById('btn-zoom-reset');
-const btnToggleHub = document.getElementById('btn-toggle-hub');
-const hubContent = document.getElementById('hub-content');
-const chkShowIdeal = document.getElementById('chk-show-ideal');
-const chkKeepHistory = document.getElementById('chk-keep-history');
-const chkShowVectors = document.getElementById('chk-show-vectors');
-const chkAutoZoom = document.getElementById('chk-auto-zoom');
-
-const valKE = document.getElementById('val-ke');
-const valPE = document.getElementById('val-pe');
-const valTE = document.getElementById('val-te');
-const barKE = document.getElementById('bar-ke');
-const barPE = document.getElementById('bar-pe');
-
-const selPreset = document.getElementById('sel-preset');
-
-// State
-const renderer = new Renderer(canvas);
-const plotter = new GraphPlotter(graphCanvas);
-const game = new Game();
-
+// Global State
+let renderer, plotter, game;
 let projectile = null;
-let previousProjectile = null; // For relative velocity
-let idealProjectile = null; // ghost path
+let previousProjectile = null;
+let idealProjectile = null;
 let historyTrajectories = [];
-
 let animationId = null;
 let isSimulating = false;
 let lastTime = 0;
@@ -101,252 +39,235 @@ let missileMode = false;
 let thrust = 0;
 let fuel = 0;
 
-// Input State
 const keys = {};
 
-// Init
-function init() {
-    updateDisplays();
+async function initApp() {
+    try {
+        console.log("Starting App Initialization...");
 
-    // Resize observers are handled in classes, but initial draw needed
-    drawFrame();
+        // 1. Load Components
+        await ComponentLoader.loadAll();
+        console.log("Components loaded.");
 
-    // Keyboard Listeners
-    window.addEventListener('keydown', (e) => {
-        keys[e.code] = true;
-        handleInputs();
-    });
-    window.addEventListener('keyup', (e) => {
-        keys[e.code] = false;
-    });
+        // 2. Initialize Core DOM-dependent Classes
+        const canvas = document.getElementById('gameCanvas');
+        const graphCanvas = document.getElementById('graphCanvas');
 
-    // Event Listeners
-    inpVelocity.addEventListener('input', (e) => {
-        velocity = parseFloat(e.target.value);
-        dispVelocity.textContent = velocity;
-    });
-
-    inpAngle.addEventListener('input', (e) => {
-        angle = parseFloat(e.target.value);
-        dispAngle.textContent = angle;
-    });
-
-    inpGravity.addEventListener('input', (e) => {
-        gravity = parseFloat(e.target.value);
-        dispGravity.textContent = gravity;
-    });
-
-    chkAirRes.addEventListener('change', (e) => {
-        airResistance = e.target.checked;
-    });
-
-    chkShowVectors.addEventListener('change', (e) => {
-        showVectors = e.target.checked;
-        drawFrame();
-    });
-
-    chkShowAccel.addEventListener('change', (e) => {
-        showAcceleration = e.target.checked;
-        drawFrame();
-    });
-
-    chkMissileMode.addEventListener('change', (e) => {
-        missileMode = e.target.checked;
-        missileParams.classList.toggle('hidden', !missileMode);
-
-        // Update document theme for Missile Mode
-        document.documentElement.classList.toggle('missile-alert', missileMode);
-
-        if (!missileMode) {
-            thrust = 0;
-            fuel = 0;
-        } else {
-            thrust = parseFloat(inpThrust.value);
-            fuel = parseFloat(inpFuel.value);
+        if (!canvas || !graphCanvas) {
+            console.error("Canvas elements not found:", { canvas, graphCanvas });
+            throw new Error("Required canvas elements not found. Retrying in 500ms...");
         }
+
+        renderer = new Renderer(canvas);
+        plotter = new GraphPlotter(graphCanvas);
+        game = new Game();
+
+        // 3. Initialize Theme Manager
+        const themeManager = new ThemeManager();
+        themeManager.init();
+
+        // 4. Setup Event Listeners
+        setupEventListeners();
+
+        // 5. Initial Render
+        window.drawFrame = drawFrame;
+        updateDisplays();
+        drawFrame();
+        renderer.drawGrid();
+
+        console.log("Physics Application Initialized Successfully.");
+    } catch (error) {
+        console.error("Initialization failed:", error);
+        // Retry logic for dynamic loading races
+        setTimeout(initApp, 500);
+    }
+}
+
+function setupEventListeners() {
+    // Inputs mapping after components are loaded
+    const inputs = {
+        velocity: document.getElementById('inp-velocity'),
+        angle: document.getElementById('inp-angle'),
+        gravity: document.getElementById('inp-gravity'),
+        airRes: document.getElementById('chk-air-resistance'),
+        planet: document.getElementById('sel-planet'),
+        missileMode: document.getElementById('chk-missile-mode'),
+        thrust: document.getElementById('inp-thrust'),
+        fuel: document.getElementById('inp-fuel'),
+        relVel: document.getElementById('chk-rel-vel'),
+        showVectors: document.getElementById('chk-show-vectors'),
+        showAccel: document.getElementById('chk-show-accel'),
+        zoom: document.getElementById('inp-zoom'),
+        autoZoom: document.getElementById('chk-auto-zoom'),
+        keepHistory: document.getElementById('chk-keep-history'),
+        showIdeal: document.getElementById('chk-show-ideal')
+    };
+
+    const buttons = {
+        fire: document.getElementById('btn-fire'),
+        reset: document.getElementById('btn-reset'),
+        challenge: document.getElementById('btn-challenge-start'),
+        zoomReset: document.getElementById('btn-zoom-reset'),
+        toggleHub: document.getElementById('btn-toggle-hub'),
+        mobileControls: document.getElementById('btn-mobile-controls'),
+        closeControls: document.getElementById('btn-close-controls')
+    };
+
+    // Keyboard
+    window.addEventListener('keydown', (e) => { keys[e.code] = true; handleInputs(); });
+    window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+    // Parameter Updates
+    inputs.velocity?.addEventListener('input', (e) => {
+        velocity = parseFloat(e.target.value);
+        document.getElementById('disp-velocity').textContent = velocity;
     });
 
-    inpThrust.addEventListener('input', (e) => {
+    inputs.angle?.addEventListener('input', (e) => {
+        angle = parseFloat(e.target.value);
+        document.getElementById('disp-angle').textContent = angle;
+    });
+
+    inputs.gravity?.addEventListener('input', (e) => {
+        gravity = parseFloat(e.target.value);
+        document.getElementById('disp-gravity').textContent = gravity;
+    });
+
+    inputs.planet?.addEventListener('change', (e) => {
+        gravity = parseFloat(e.target.value);
+        if (inputs.gravity) inputs.gravity.value = gravity;
+        document.getElementById('disp-gravity').textContent = gravity;
+    });
+
+    inputs.airRes?.addEventListener('change', (e) => airResistance = e.target.checked);
+
+    inputs.showVectors?.addEventListener('change', (e) => { showVectors = e.target.checked; drawFrame(); });
+    inputs.showAccel?.addEventListener('change', (e) => { showAcceleration = e.target.checked; drawFrame(); });
+
+    inputs.missileMode?.addEventListener('change', (e) => {
+        missileMode = e.target.checked;
+        const mp = document.getElementById('missile-params');
+        if (mp) mp.classList.toggle('hidden', !missileMode);
+        document.documentElement.classList.toggle('missile-alert', missileMode);
+        if (!missileMode) { thrust = 0; fuel = 0; }
+        else { thrust = parseFloat(inputs.thrust?.value || 0); fuel = parseFloat(inputs.fuel?.value || 0); }
+    });
+
+    inputs.thrust?.addEventListener('input', (e) => {
         thrust = parseFloat(e.target.value);
-        dispThrust.textContent = thrust;
+        document.getElementById('disp-thrust').textContent = thrust;
         if (projectile && missileMode) projectile.setThrust(thrust);
     });
 
-    inpFuel.addEventListener('input', (e) => {
+    inputs.fuel?.addEventListener('input', (e) => {
         fuel = parseFloat(e.target.value);
-        dispFuel.textContent = fuel;
+        document.getElementById('disp-fuel').textContent = fuel;
     });
 
-    chkRelVel.addEventListener('change', (e) => {
-        relVelHud.classList.toggle('hidden', !e.target.checked);
-        drawFrame();
-    });
-
-    selPlanet.addEventListener('change', (e) => {
-        gravity = parseFloat(e.target.value);
-        inpGravity.value = gravity;
-        dispGravity.textContent = gravity;
-    });
-
-    selPreset.addEventListener('change', (e) => loadPreset(e.target.value));
-
-    inpZoom.addEventListener('input', (e) => {
+    inputs.zoom?.addEventListener('input', (e) => {
         zoom = parseFloat(e.target.value);
         renderer.setZoom(zoom, true);
-        dispZoom.textContent = Math.round(zoom * 100);
-
-        // Disable auto-zoom if manually adjusted
-        if (chkAutoZoom.checked) {
-            chkAutoZoom.checked = false;
-        }
-
+        document.getElementById('disp-zoom').textContent = Math.round(zoom * 100);
+        if (inputs.autoZoom && inputs.autoZoom.checked) inputs.autoZoom.checked = false;
         drawFrame();
     });
 
-    btnZoomReset.addEventListener('click', () => {
+    buttons.zoomReset?.addEventListener('click', () => {
         zoom = 1.0;
-        inpZoom.value = 1.0;
+        if (inputs.zoom) inputs.zoom.value = 1.0;
         renderer.setZoom(1.0);
-        dispZoom.textContent = "100";
+        document.getElementById('disp-zoom').textContent = "100";
         drawFrame();
     });
 
-    btnToggleHub.addEventListener('click', () => {
-        hubContent.classList.toggle('hidden');
-        btnToggleHub.textContent = hubContent.classList.contains('hidden') ? "Expand" : "Collapse";
-    });
-
-    btnFire.addEventListener('click', () => {
-        fireProjectile();
-        // Auto-close panel on mobile when firing to show simulation
-        if (window.innerWidth < 1024) {
-            controlsPanel.classList.add('translate-x-full');
+    buttons.toggleHub?.addEventListener('click', () => {
+        const hubContent = document.getElementById('hub-content');
+        if (hubContent) {
+            hubContent.classList.toggle('hidden');
+            buttons.toggleHub.textContent = hubContent.classList.contains('hidden') ? "Expand" : "Collapse";
         }
     });
 
-    btnReset.addEventListener('click', resetSimulation);
-    btnChallenge.addEventListener('click', startChallenge);
+    buttons.fire?.addEventListener('click', fireProjectile);
+    buttons.reset?.addEventListener('click', resetSimulation);
+    buttons.challenge?.addEventListener('click', startChallenge);
 
-    btnMobileControls.addEventListener('click', () => {
-        controlsPanel.classList.remove('translate-x-full');
+    buttons.mobileControls?.addEventListener('click', () => {
+        const cp = document.getElementById('controls-panel');
+        if (cp) cp.classList.remove('translate-x-full');
     });
 
-    btnCloseControls.addEventListener('click', () => {
-        controlsPanel.classList.add('translate-x-full');
+    buttons.closeControls?.addEventListener('click', () => {
+        const cp = document.getElementById('controls-panel');
+        if (cp) cp.classList.add('translate-x-full');
     });
 
-    // Make drawFrame accessible to resize observers
-    window.drawFrame = drawFrame;
+    // Panning
+    initPanning();
+}
 
-    // Simulation Panning
+function initPanning() {
+    if (!renderer) return;
+    const canvas = renderer.canvas;
     let isPanning = false;
     let startX, startY;
 
     const onPanStart = (x, y) => {
-        isPanning = true;
-        startX = x;
-        startY = y;
+        isPanning = true; startX = x; startY = y;
         canvas.style.cursor = 'grabbing';
-        // Disable auto-zoom when manually panning
-        if (chkAutoZoom.checked) chkAutoZoom.checked = false;
+        const chkAutoZoom = document.getElementById('chk-auto-zoom');
+        if (chkAutoZoom?.checked) chkAutoZoom.checked = false;
     };
 
     const onPanMove = (x, y) => {
         if (!isPanning) return;
-        const dx = x - startX;
-        const dy = y - startY;
-        renderer.manualPanX += dx;
-        renderer.manualPanY += dy;
-        startX = x;
-        startY = y;
+        renderer.manualPanX += x - startX;
+        renderer.manualPanY += y - startY;
+        startX = x; startY = y;
         drawFrame();
     };
 
-    const onPanEnd = () => {
-        isPanning = false;
-        canvas.style.cursor = 'crosshair';
-    };
-
-    canvas.addEventListener('mousedown', e => {
-        onPanStart(e.clientX, e.clientY);
-    });
-
-    window.addEventListener('mousemove', e => {
-        onPanMove(e.clientX, e.clientY);
-    });
-
-    window.addEventListener('mouseup', onPanEnd);
-
-    canvas.addEventListener('touchstart', e => {
-        const touch = e.touches[0];
-        onPanStart(touch.clientX, touch.clientY);
-    }, { passive: true });
-
-    window.addEventListener('touchmove', e => {
-        const touch = e.touches[0];
-        onPanMove(touch.clientX, touch.clientY);
-    }, { passive: true });
-
-    window.addEventListener('touchend', onPanEnd);
-
-    // Initial render
-    renderer.drawGrid();
+    canvas.addEventListener('mousedown', e => onPanStart(e.clientX, e.clientY));
+    window.addEventListener('mousemove', e => onPanMove(e.clientX, e.clientY));
+    window.addEventListener('mouseup', () => { isPanning = false; canvas.style.cursor = 'crosshair'; });
 }
 
 function handleInputs() {
     if (!isSimulating || !projectile || !missileMode) return;
-
-    // Steering (A/D or Arrows)
-    const turnSpeed = 2; // Degrees per frame roughly
-    if (keys['ArrowLeft'] || keys['KeyA']) {
-        projectile.setHeading(projectile.heading + turnSpeed);
-    }
-    if (keys['ArrowRight'] || keys['KeyD']) {
-        projectile.setHeading(projectile.heading - turnSpeed);
-    }
-
-    // Thrust (Space)
-    const activeThrust = keys['Space'] ? parseFloat(inpThrust.value) || 20 : 0;
+    const turnSpeed = 2;
+    if (keys['ArrowLeft'] || keys['KeyA']) projectile.setHeading(projectile.heading + turnSpeed);
+    if (keys['ArrowRight'] || keys['KeyD']) projectile.setHeading(projectile.heading - turnSpeed);
+    const it = document.getElementById('inp-thrust');
+    const activeThrust = keys['Space'] ? parseFloat(it?.value || 20) : 0;
     projectile.setThrust(activeThrust);
 }
 
 function updateDisplays() {
-    dispVelocity.textContent = velocity;
-    dispAngle.textContent = angle;
-    dispGravity.textContent = gravity;
-    dispThrust.textContent = thrust;
-    dispFuel.textContent = fuel;
-}
-
-function startChallenge() {
-    game.startChallenge();
-    challengeInfo.classList.remove('hidden');
-    scoreDisp.textContent = game.score;
-    targetDistDisp.textContent = game.targetDist + "m";
-    resetSimulation();
+    const ids = ['disp-velocity', 'disp-angle', 'disp-gravity', 'disp-thrust', 'disp-fuel'];
+    const vals = [velocity, angle, gravity, thrust, fuel];
+    ids.forEach((id, i) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = vals[i];
+    });
 }
 
 function fireProjectile() {
     if (isSimulating) return;
+    const chkKeepHistory = document.getElementById('chk-keep-history');
+    const chkShowIdeal = document.getElementById('chk-show-ideal');
 
-    // History management
-    if (!chkKeepHistory.checked) {
-        historyTrajectories = [];
-    } else if (projectile) {
-        // Save previous path to history
+    if (!chkKeepHistory?.checked) historyTrajectories = [];
+    else if (projectile) {
         historyTrajectories.push(projectile.path);
         if (historyTrajectories.length > 5) historyTrajectories.shift();
     }
 
-    if (projectile) {
-        previousProjectile = projectile; // Store for relative velocity
-    }
+    if (projectile) previousProjectile = projectile;
 
     projectile = new Projectile(0, 0, velocity, angle, missileMode ? 0 : thrust, fuel);
-    if (missileMode) projectile.setThrust(0); // Start off, let user press Space
+    if (missileMode) projectile.setThrust(0);
 
-    // Ideal projectile (no air resistance, no thrust for pure gravity comparison)
-    if (chkShowIdeal.checked && (airResistance || missileMode)) {
+    if (chkShowIdeal?.checked && (airResistance || missileMode)) {
         idealProjectile = new Projectile(0, 0, velocity, angle, 0, 0);
         idealProjectile.useWasm = false;
         idealProjectile.isIdeal = true;
@@ -356,12 +277,14 @@ function fireProjectile() {
 
     isSimulating = true;
     game.lastHeight = 0;
-
-    // Clear graphs
     plotter.resetPan();
     plotter.draw([]);
-
     animationId = requestAnimationFrame(loop);
+
+    if (window.innerWidth < 1024) {
+        const cp = document.getElementById('controls-panel');
+        if (cp) cp.classList.add('translate-x-full');
+    }
 }
 
 function resetSimulation() {
@@ -371,144 +294,97 @@ function resetSimulation() {
     previousProjectile = null;
     idealProjectile = null;
     historyTrajectories = [];
-    renderer.clear();
-    renderer.drawGrid();
-    renderer.resetView(); // Core change for panning
+    if (renderer) {
+        renderer.clear();
+        renderer.drawGrid();
+        renderer.resetView();
+    }
     plotter.resetPan();
 
-    // Reset zoom gracefully if auto-zoom was on
-    if (chkAutoZoom.checked) {
-        renderer.setZoom(1.0);
+    const chkAutoZoom = document.getElementById('chk-auto-zoom');
+    if (chkAutoZoom?.checked) {
+        if (renderer) renderer.setZoom(1.0);
     } else {
-        renderer.setZoom(zoom, true);
+        if (renderer) renderer.setZoom(zoom, true);
     }
 
-    if (game.isActive) {
-        renderer.drawTarget(game.targetDist, game.targetWidth);
-    }
+    if (game.isActive && renderer) renderer.drawTarget(game.targetDist, game.targetWidth);
 
-    valRange.textContent = "0.00";
-    valHeight.textContent = "0.00";
-    valTime.textContent = "0.00";
-    valRelV.textContent = "0.00 m/s";
+    ['val-range', 'val-height', 'val-time'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = "0.00";
+    });
 }
 
 function loop(timestamp) {
-    if (!timestamp) {
-        animationId = requestAnimationFrame(loop);
-        return;
-    }
     if (!lastTime) lastTime = timestamp;
     let dt = (timestamp - lastTime) / 1000;
     lastTime = timestamp;
-
-    // Guard against NaN or extreme jumps
     if (!isFinite(dt) || dt > 0.1) dt = 0.016;
 
     const cleanDt = Math.min(dt, 0.05);
-
-    // Update zoom animation
-    const zoomChanged = renderer.updateZoom(cleanDt);
+    const zoomChanged = renderer ? renderer.updateZoom(cleanDt) : false;
     if (zoomChanged) {
-        // Sync zoom slider for visual feedback
-        inpZoom.value = renderer.targetZoom;
-        dispZoom.textContent = Math.round(renderer.zoom * 100);
+        const iz = document.getElementById('inp-zoom');
+        if (iz) iz.value = renderer.targetZoom;
+        const dz = document.getElementById('disp-zoom');
+        if (dz) dz.textContent = Math.round(renderer.zoom * 100);
     }
 
     if (isSimulating && projectile) {
-        handleInputs(); // Process real-time inputs per frame
-
+        handleInputs();
         const steps = 5;
         const subDt = cleanDt / steps;
 
         for (let i = 0; i < steps; i++) {
             projectile.update(subDt, gravity, airResistance);
-
-            // Update ideal ghost if enabled
-            if (idealProjectile) {
-                idealProjectile.update(subDt, gravity, false);
-            }
-
+            if (idealProjectile) idealProjectile.update(subDt, gravity, false);
             const collision = game.checkCollision(projectile);
 
             if (collision.ground || projectile.y < -10 || projectile.x > 1000) {
                 isSimulating = false;
                 projectile.y = Math.max(0, projectile.y);
-
-                valRange.textContent = projectile.x.toFixed(2);
-                valHeight.textContent = game.lastHeight.toFixed(2);
-                valTime.textContent = projectile.time.toFixed(2);
+                const vr = document.getElementById('val-range');
+                if (vr) vr.textContent = projectile.x.toFixed(2);
+                const vh = document.getElementById('val-height');
+                if (vh) vh.textContent = game.lastHeight.toFixed(2);
+                const vt = document.getElementById('val-time');
+                if (vt) vt.textContent = projectile.time.toFixed(2);
 
                 if (game.isActive) {
                     game.updateScore(collision.hit);
-                    scoreDisp.textContent = game.score;
+                    const sc = document.getElementById('score');
+                    if (sc) sc.textContent = game.score;
                     if (collision.hit) {
-                        valRange.style.color = '#22c55e';
-                        setTimeout(() => valRange.style.color = '', 1000);
-                        targetDistDisp.textContent = game.targetDist + "m";
+                        const td = document.getElementById('target-dist');
+                        if (td) td.textContent = game.targetDist + "m";
                         startChallenge();
                     }
                 }
             }
         }
-
-        // Analysis & Stats (Run once per frame)
         updateEnergyDisplay(projectile);
-
         if (projectile.y > game.lastHeight) {
             game.lastHeight = projectile.y;
-            valHeight.textContent = game.lastHeight.toFixed(2);
+            const vh = document.getElementById('val-height');
+            if (vh) vh.textContent = game.lastHeight.toFixed(2);
         }
 
-        // Relative Velocity Calculation
-        if (previousProjectile && chkRelVel.checked) {
-            const relVx = projectile.vx - previousProjectile.vx;
-            const relVy = projectile.vy - previousProjectile.vy;
-            const relV = Math.sqrt(relVx * relVx + relVy * relVy);
-            valRelV.textContent = relV.toFixed(2) + " m/s";
-        }
-
-        // Smart Auto-Zoom Calculation (Run once per frame)
-        if (chkAutoZoom.checked) {
-            // Use incrementally updated bbox for efficiency
+        const chkAutoZoom = document.getElementById('chk-auto-zoom');
+        if (chkAutoZoom?.checked && renderer) {
             let { maxX, maxY } = projectile.bbox;
-
-            // Proactive Lookahead
-            const lookaheadTime = 1.0;
-            const futureX = projectile.x + projectile.vx * lookaheadTime;
-            const futureY = projectile.y + projectile.vy * lookaheadTime;
-
-            maxX = Math.max(maxX, projectile.x, futureX);
-            maxY = Math.max(maxY, projectile.y, futureY);
-
-            // Include target in view
-            if (game.isActive) {
-                maxX = Math.max(maxX, game.targetDist + 10);
-            }
-
-            maxX = Math.max(maxX, 40);
-            maxY = Math.max(maxY, 15);
-
-            const padding = 0.75;
-            const zoomX = (renderer.canvas.width * padding - renderer.originX) / (maxX * renderer.baseScale);
-            const zoomY = (renderer.canvas.height * padding) / (maxY * renderer.baseScale);
-
-            const idealZoom = Math.min(zoomX, zoomY, 1.5);
+            maxX = Math.max(maxX, projectile.x + projectile.vx, 40);
+            maxY = Math.max(maxY, projectile.y + projectile.vy, 15);
+            if (game.isActive) maxX = Math.max(maxX, game.targetDist + 10);
+            const idealZoom = Math.min((renderer.canvas.width * 0.75 - renderer.originX) / (maxX * renderer.baseScale), (renderer.canvas.height * 0.75) / (maxY * renderer.baseScale), 1.5);
             renderer.setZoom(idealZoom);
         }
-
-        // Real-time graph updates
         plotter.draw(projectile.path);
     }
 
     drawFrame();
-
-    if (isSimulating || zoomChanged) {
-        animationId = requestAnimationFrame((t) => loop(t));
-    } else {
-        animationId = null;
-        lastTime = 0;
-    }
+    if (isSimulating || zoomChanged) animationId = requestAnimationFrame(loop);
+    else { animationId = null; lastTime = 0; }
 }
 
 function updateEnergyDisplay(p) {
@@ -516,100 +392,45 @@ function updateEnergyDisplay(p) {
     const ke = 0.5 * v2;
     const pe = gravity * Math.max(0, p.y);
     const te = ke + pe;
-
-    valKE.textContent = ke.toFixed(1);
-    valPE.textContent = pe.toFixed(1);
-    valTE.textContent = te.toFixed(1);
-
-    if (!game.maxEnergy || !isSimulating) {
-        game.maxEnergy = te || 100;
-    }
-
-    const kePct = Math.min(100, (ke / game.maxEnergy) * 100);
-    const pePct = Math.min(100, (pe / game.maxEnergy) * 100);
-
-    barKE.style.width = kePct + '%';
-    barPE.style.width = pePct + '%';
+    const vk = document.getElementById('val-ke');
+    if (vk) vk.textContent = ke.toFixed(1);
+    const vp = document.getElementById('val-pe');
+    if (vp) vp.textContent = pe.toFixed(1);
+    const vt = document.getElementById('val-te');
+    if (vt) vt.textContent = te.toFixed(1);
+    if (!game.maxEnergy || !isSimulating) game.maxEnergy = te || 100;
+    const bk = document.getElementById('bar-ke');
+    if (bk) bk.style.width = Math.min(100, (ke / game.maxEnergy) * 100) + '%';
+    const bp = document.getElementById('bar-pe');
+    if (bp) bp.style.width = Math.min(100, (pe / game.maxEnergy) * 100) + '%';
 }
 
 function drawFrame() {
-    renderer.clear();
-    renderer.drawGrid();
-
-    // Draw History
-    historyTrajectories.forEach(path => {
-        renderer.drawPath(path, '#334155', 1);
-    });
-
-    if (game.isActive) {
-        renderer.drawTarget(game.targetDist, game.targetWidth);
-    }
-
-    if (idealProjectile) {
-        renderer.drawProjectile(idealProjectile, false, false, "Ideal");
-    }
-
-    if (previousProjectile && chkRelVel.checked) {
-        renderer.drawProjectile(previousProjectile, false, false, "Prev");
-        renderer.drawRelativeVelocity(previousProjectile, projectile);
-    }
-
+    if (!renderer) return;
+    renderer.clear(); renderer.drawGrid();
+    historyTrajectories.forEach(path => renderer.drawPath(path, '#334155', 1));
+    if (game.isActive) renderer.drawTarget(game.targetDist, game.targetWidth);
+    if (idealProjectile) renderer.drawProjectile(idealProjectile, false, false, "Ideal");
     if (projectile) {
         renderer.drawProjectile(projectile, showVectors, showAcceleration, missileMode ? "Missile" : "Ball");
-
-        valRange.textContent = projectile.x.toFixed(2);
-        valTime.textContent = projectile.time.toFixed(2);
-
-        if (projectile.y > parseFloat(valHeight.textContent)) {
-            valHeight.textContent = projectile.y.toFixed(2);
-        }
+        const vr = document.getElementById('val-range');
+        if (vr) vr.textContent = projectile.x.toFixed(2);
+        const vt = document.getElementById('val-time');
+        if (vt) vt.textContent = projectile.time.toFixed(2);
     }
 }
 
-function loadPreset(preset) {
-    if (!preset) return;
-
+function startChallenge() {
+    game.startChallenge();
+    const ci = document.getElementById('challenge-info');
+    if (ci) ci.classList.remove('hidden');
+    const sc = document.getElementById('score');
+    if (sc) sc.textContent = game.score;
+    const td = document.getElementById('target-dist');
+    if (td) td.textContent = game.targetDist + "m";
     resetSimulation();
-
-    switch (preset) {
-        case 'max-range':
-            velocity = 30;
-            angle = 45;
-            airResistance = false;
-            missileMode = false;
-            break;
-        case 'moon-jump':
-            velocity = 20;
-            angle = 45;
-            gravity = 1.62;
-            airResistance = false;
-            missileMode = false;
-            break;
-        case 'air-drag-test':
-            velocity = 50;
-            angle = 30;
-            airResistance = true;
-            missileMode = false;
-            break;
-        case 'zero-g':
-            velocity = 15;
-            angle = 10;
-            gravity = 0;
-            airResistance = false;
-            missileMode = false;
-            break;
-    }
-
-    // Update UI elements
-    inpVelocity.value = velocity;
-    inpAngle.value = angle;
-    inpGravity.value = gravity;
-    chkAirRes.checked = airResistance;
-    chkMissileMode.checked = missileMode;
-    missileParams.classList.toggle('hidden', !missileMode);
-
-    updateDisplays();
-    drawFrame();
 }
 
-init();
+// Global drawFrame will be set in initApp after renderer is ready
+
+initApp();

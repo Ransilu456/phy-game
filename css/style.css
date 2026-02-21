@@ -1,31 +1,402 @@
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-    width: 8px;
+/* --- Windows 95 Core Styles Overhaul --- */
+
+:root {
+    --win-teal: #008080;
+    --win-grey: #c0c0c0;
+    --win-white: #ffffff;
+    --win-black: #000000;
+    --win-dark-grey: #808080;
+    --win-blue: #000080;
+    --win-blue-light: #1084d0;
+    --win-silver: #dfdfdf;
+
+    /* Bevel border variables */
+    --win-border-light: var(--win-white);
+    --win-border-dark: var(--win-dark-grey);
+    --win-border-darkest: var(--win-black);
 }
 
-::-webkit-scrollbar-track {
-    background: #0f172a;
+/* Base Reset */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
-::-webkit-scrollbar-thumb {
-    background: #334155;
-    border-radius: 4px;
+body,
+html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: "MS Sans Serif", "Tahoma", "Arial", sans-serif;
+    background-color: var(--win-teal);
+    color: var(--win-black);
+    font-size: 12px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+/* Typography Reset */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+ul,
+li {
+    margin: 0;
+    padding: 0;
+    font-size: inherit;
+    font-weight: normal;
 }
 
-/* Canvas Specific Rendering Fixes */
-canvas {
-    image-rendering: -moz-crisp-edges;
-    image-rendering: -webkit-crisp-edges;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
+/* Desktop Container */
+.desktop {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 10px;
+    padding-bottom: 38px;
+    /* Room for taskbar */
+    gap: 8px;
+    overflow-y: auto;
+    position: relative;
+    scrollbar-width: thin;
 }
 
-/* Glassmorphism utility for older browsers fallback */
-.backdrop-blur-md {
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
+/* Selection Fix */
+::selection {
+    background: var(--win-blue);
+    color: white;
+}
+
+/* Taskbar */
+.taskbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 28px;
+    background: var(--win-grey);
+    border-top: 2px solid var(--win-border-light);
+    display: flex;
+    align-items: center;
+    padding: 2px;
+    z-index: 1000;
+    box-shadow: inset 0 1px 0 var(--win-white);
+}
+
+.start-button {
+    height: 22px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 6px;
+    font-weight: bold;
+    background: var(--win-grey);
+    border: 2px solid;
+    border-color: var(--win-border-light) var(--win-border-darkest) var(--win-border-darkest) var(--win-border-light);
+    box-shadow: inset 1px 1px 0 var(--win-white), inset -1px -1px 0 var(--win-dark-grey);
+    cursor: pointer;
+    user-select: none;
+}
+
+.start-button:active {
+    border-color: var(--win-border-darkest) var(--win-border-light) var(--win-border-light) var(--win-border-darkest);
+    box-shadow: none;
+    padding: 3px 5px 1px 7px;
+}
+
+.tray {
+    margin-left: auto;
+    border: 2px solid;
+    border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+    padding: 2px 8px;
+    font-size: 11px;
+    background: var(--win-grey);
+    box-shadow: inset -1px -1px 0 var(--win-white);
+}
+
+/* Window Styles */
+.win-window {
+    background: var(--win-grey);
+    border: 2px solid;
+    border-color: var(--win-border-light) var(--win-border-darkest) var(--win-border-darkest) var(--win-border-light);
+    box-shadow: inset 1px 1px 0 var(--win-white), inset -1px -1px 0 var(--win-dark-grey);
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+}
+
+.win-title-bar {
+    background: linear-gradient(90deg, var(--win-blue), var(--win-blue-light));
+    color: white;
+    padding: 2px 3px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    font-size: 11px;
+    height: 18px;
+    user-select: none;
+}
+
+.win-title {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.win-title-controls {
+    display: flex;
+    gap: 2px;
+}
+
+.win-control-btn {
+    width: 16px;
+    height: 14px;
+    background: var(--win-grey);
+    border: 1px solid;
+    border-color: var(--win-border-light) var(--win-border-darkest) var(--win-border-darkest) var(--win-border-light);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 9px;
+    font-weight: bold;
+    color: black;
+    padding: 0;
+    cursor: pointer;
+    box-shadow: inset 1px 1px 0 var(--win-white);
+}
+
+.win-control-btn:active {
+    border-color: var(--win-border-darkest) var(--win-border-light) var(--win-border-light) var(--win-border-darkest);
+    box-shadow: none;
+    padding-top: 1px;
+    padding-left: 1px;
+}
+
+.win-content {
+    padding: 10px;
+    flex: 1;
+}
+
+/* Common Win95 Elements */
+.win-panel {
+    border: 2px solid;
+    border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+    background: var(--win-grey);
+    padding: 8px;
+    box-shadow: inset -1px -1px 0 var(--win-white);
+}
+
+.win-btn {
+    background: var(--win-grey);
+    border: 2px solid;
+    border-color: var(--win-border-light) var(--win-border-darkest) var(--win-border-darkest) var(--win-border-light);
+    padding: 4px 10px;
+    font-size: 12px;
+    font-family: inherit;
+    box-shadow: inset 1px 1px 0 var(--win-white), inset -1px -1px 0 var(--win-dark-grey);
+    cursor: pointer;
+    outline: none;
+}
+
+.win-btn:active {
+    border-color: var(--win-border-darkest) var(--win-border-light) var(--win-border-light) var(--win-border-darkest);
+    box-shadow: none;
+    padding: 5px 9px 3px 11px;
+}
+
+.win-btn:focus {
+    outline: 1px dotted var(--win-black);
+    outline-offset: -4px;
+}
+
+.win-btn:disabled {
+    color: var(--win-dark-grey);
+    text-shadow: 1px 1px 0 var(--win-white);
+    cursor: default;
+}
+
+.win-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
+.win-label {
+    font-size: 11px;
+    color: black;
+}
+
+.win-input {
+    background: var(--win-white);
+    border: 2px solid;
+    border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+    padding: 3px 4px;
+    font-family: inherit;
+    font-size: 12px;
+    outline: none;
+}
+
+.win-select {
+    background: var(--win-white);
+    border: 2px solid;
+    border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+    padding: 2px;
+    font-family: inherit;
+    font-size: 12px;
+    outline: none;
+}
+
+.win-checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    margin-bottom: 6px;
+    cursor: default;
+}
+
+/* Range Input styling */
+input[type="range"] {
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    width: 100%;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    background: var(--win-white);
+    border: 2px solid;
+    border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    height: 18px;
+    width: 11px;
+    background: var(--win-grey);
+    border: 2px solid;
+    border-color: var(--win-border-light) var(--win-border-darkest) var(--win-border-darkest) var(--win-border-light);
+    margin-top: -9px;
+    box-shadow: inset 1px 1px 0 var(--win-white), inset -1px -1px 0 var(--win-dark-grey);
+}
+
+/* Layout Core */
+.win-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.win-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 8px;
+    width: 100%;
+}
+
+/* Custom layout blocks */
+#simulation-container {
+    grid-column: span 12;
+    /* Full width for main sim viewport */
+}
+
+#side-layout {
+    grid-column: span 12;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 8px;
+}
+
+#controls-panel-container {
+    grid-column: span 4;
+}
+
+#learning-hub-container {
+    grid-column: span 8;
+}
+
+/* Visibility */
+.hidden {
+    display: none !important;
+}
+
+.lg-hidden {
+    display: none;
+}
+
+/* Energy Bars */
+.energy-bar-container {
+    height: 12px;
+    background: var(--win-white);
+    border: 2px solid;
+    border-color: var(--win-border-dark) var(--win-border-light) var(--win-border-light) var(--win-border-dark);
+    margin: 2px 0;
+    overflow: hidden;
+}
+
+.energy-bar {
+    height: 100%;
+    background: var(--win-blue);
+    transition: width 0.1s ease-out;
+}
+
+/* Responsive Overrides */
+@media (max-width: 1200px) {
+    #controls-panel-container {
+        grid-column: span 12;
+    }
+
+    #learning-hub-container {
+        grid-column: span 12;
+    }
+}
+
+@media (max-width: 768px) {
+    .desktop {
+        padding: 4px;
+    }
+
+    .lg-hidden {
+        display: block;
+    }
+}
+
+/* Custom Scrollbar for Containers */
+.win-content::-webkit-scrollbar,
+.desktop::-webkit-scrollbar {
+    width: 16px;
+}
+
+.win-content::-webkit-scrollbar-track,
+.desktop::-webkit-scrollbar-track {
+    background-color: var(--win-silver);
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAD0lEQVQImWNgYGBoYKAAABYABAdR7C0AAAAASUVORK5CYII=");
+}
+
+.win-content::-webkit-scrollbar-thumb,
+.desktop::-webkit-scrollbar-thumb {
+    background-color: var(--win-grey);
+    border: 2px solid;
+    border-color: var(--win-border-light) var(--win-border-darkest) var(--win-border-darkest) var(--win-border-light);
+    box-shadow: inset 1px 1px 0 var(--win-white), inset -1px -1px 0 var(--win-dark-grey);
+}
+
+.win-content::-webkit-scrollbar-button,
+.desktop::-webkit-scrollbar-button {
+    background-color: var(--win-grey);
+    width: 16px;
+    height: 16px;
+    border: 1px solid;
+    border-color: var(--win-border-light) var(--win-border-darkest) var(--win-border-darkest) var(--win-border-light);
 }

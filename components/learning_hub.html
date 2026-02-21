@@ -1,0 +1,85 @@
+<div class="win-window" style="width: 100%; height: 100%;">
+    <div class="win-title-bar">
+        <div class="win-title">
+            <span>📊 Lab Data & Analysis</span>
+        </div>
+        <div class="win-title-controls">
+            <button class="win-control-btn" id="btn-toggle-hub">_</button>
+            <button class="win-control-btn">×</button>
+        </div>
+    </div>
+    <div class="win-content" id="hub-content" style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
+            <!-- Real-time Graph -->
+            <div class="win-panel"
+                style="grid-column: span 2; min-height: 180px; display: flex; flex-direction: column;">
+                <div style="font-weight: bold; font-size: 11px; margin-bottom: 4px;">Velocity Component Analysis</div>
+                <div
+                    style="flex: 1; background: #fff; border: 2px solid; border-color: #808080 #fff #fff #808080; position: relative;">
+                    <canvas id="graphCanvas" style="width: 100%; height: 100%; display: block;"></canvas>
+                </div>
+            </div>
+
+            <!-- Energy Dashboard -->
+            <div class="win-panel">
+                <div style="font-weight: bold; font-size: 11px; margin-bottom: 6px;">Mechanical Energy</div>
+                <div class="win-field-group" style="margin-bottom: 8px;">
+                    <div class="win-row" style="justify-content: space-between;">
+                        <span class="win-label">Kinetic (K.E)</span>
+                        <span id="val-ke">0</span>J
+                    </div>
+                    <div class="energy-bar-container">
+                        <div id="bar-ke" class="energy-bar" style="width: 0%; background: #000080;"></div>
+                    </div>
+                </div>
+
+                <div class="win-field-group" style="margin-bottom: 8px;">
+                    <div class="win-row" style="justify-content: space-between;">
+                        <span class="win-label">Potential (P.E)</span>
+                        <span id="val-pe">0</span>J
+                    </div>
+                    <div class="energy-bar-container">
+                        <div id="bar-pe" class="energy-bar" style="width: 0%; background: #008000;"></div>
+                    </div>
+                </div>
+
+                <div class="win-label" style="margin-top: 4px; padding-top: 4px; border-top: 1px dotted #808080;">Total:
+                    <span id="val-te">0</span>J</div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
+            <!-- Camera & Viewport -->
+            <div class="win-panel">
+                <div style="font-weight: bold; font-size: 11px; margin-bottom: 6px;">Camera Controls</div>
+                <div class="win-field-group">
+                    <div class="win-row" style="justify-content: space-between;">
+                        <span class="win-label">Magnification</span>
+                        <span id="disp-zoom">100%</span>
+                    </div>
+                    <input type="range" id="inp-zoom" min="0.1" max="3" step="0.1" value="1">
+                </div>
+                <div class="win-checkbox-group">
+                    <input type="checkbox" id="chk-auto-zoom" checked>
+                    <span class="win-label">Auto-Tracking Camera</span>
+                </div>
+                <button id="btn-zoom-reset" class="win-btn" style="width: 100%; margin-top: 5px;">Center
+                    Viewport</button>
+            </div>
+
+            <!-- Physics Tab -->
+            <div class="win-panel">
+                <div style="font-weight: bold; font-size: 11px; margin-bottom: 6px;">Theory Constants</div>
+                <ul style="list-style: none; font-size: 11px; line-height: 1.6;">
+                    <li>• Gravity: <span id="theory-g">9.81</span> m/s²</li>
+                    <li>• Air Density: 1.225 kg/m³</li>
+                    <li>• Earth Radius: 6,371 km</li>
+                </ul>
+                <div
+                    style="font-family: serif; font-size: 13px; margin-top: 5px; color: #444; text-align: center; font-style: italic;">
+                    v = u + at
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
